@@ -1,13 +1,65 @@
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:family_home/src/models/guest_record_model.dart';
+import 'package:family_home/src/widget/custom_toast.dart';
 import 'package:get/get.dart';
 
 class GuestRecordController extends GetxController {
   RxBool isLoading = false.obs;
   RxList<GuestRecordModel> records = <GuestRecordModel>[].obs;
+  RxList<String> availableRooms = <String>[].obs;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
+  //get available rooms
+  Future<void> getAvailableRooms() async {
+    try {
+      // First get all rooms from rooms collection
+      var roomsSnapshot = await FirebaseFirestore.instance
+          .collection('rooms')
+          .orderBy('roomNumber')
+          .get();
+
+      // Get all active guest records to find occupied rooms
+      var activeGuests = await recordsCollection
+          .where('checkoutDate')
+          .get();
+      
+      // Extract occupied room numbers
+      List<String> occupiedRooms = [];
+      for (var doc in activeGuests.docs) {
+        final roomNo = doc['roomNo'];
+        if (roomNo != null && roomNo.isNotEmpty) {
+          occupiedRooms.add(roomNo);
+        }
+      }
+      
+      // Get all room numbers and filter out occupied ones
+      List<String> allRooms = [];
+      for (var doc in roomsSnapshot.docs) {
+        final roomNo = doc['roomNumber'];
+        if (roomNo != null && roomNo.isNotEmpty) {
+          allRooms.add(roomNo);
+        }
+      }
+      
+      // Filter to get available rooms
+      availableRooms.value = allRooms
+          .where((room) => !occupiedRooms.contains(room))
+          .toList()
+          ..sort();
+      
+      // If no rooms are available, show all rooms
+      if (availableRooms.isEmpty) {
+        availableRooms.value = allRooms..sort();
+      }
+      
+    } catch (e) {
+      log("Error fetching available rooms: $e");
+      availableRooms.clear();
+    }
+  }
+
+
   // Collection reference
   CollectionReference get recordsCollection => _firestore.collection('guest_records');
 
@@ -42,11 +94,7 @@ class GuestRecordController extends GetxController {
     } catch (e) {
       log("Error fetching records: $e");
       records.clear();
-      Get.snackbar(
-        "Error", 
-        "Failed to load records",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      showErrorToast("Failed to load records",);
     } finally {
       isLoading.value = false;
     }
@@ -61,6 +109,8 @@ class GuestRecordController extends GetxController {
         .where('checkinDate', isEqualTo: date)
         .orderBy('createdAt', descending: true) // Now this should work
         .get();
+
+        print(querySnapshot.docs);
 
     records.value = querySnapshot.docs.map((doc) {
       return GuestRecordModel(
@@ -92,22 +142,13 @@ class GuestRecordController extends GetxController {
     
     // If still getting index error even after creation
     if (e.toString().contains('index')) {
-      Get.snackbar(
-        "Index Still Building", 
-        "Please wait 1-2 minutes for the index to finish building",
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 5),
-      );
+      showErrorToast("Please wait 1-2 minutes for the index to finish building");
       
       // Fallback: fetch without ordering
       await _getRecordsByDateWithoutOrdering(date);
     } else {
       records.clear();
-      Get.snackbar(
-        "Error", 
-        "Failed to load records",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      showErrorToast("Failed to load records");
     }
   } finally {
     isLoading.value = false;
@@ -193,13 +234,14 @@ Future<void> getActiveRecords() async {
     isLoading.value = true;
     
     QuerySnapshot querySnapshot = await recordsCollection
-        .where('checkoutDate', isEqualTo: null)
+        .where('hasCheckedOut', isNotEqualTo: true)
         .orderBy('checkinDate', descending: true) // This might need an index too
         .get();
 
     records.value = querySnapshot.docs.map((doc) {
       return GuestRecordModel(
         id: doc.id,
+        hasCheckedOut: doc['hasCheckedOut'],
         name: doc['name'],
         address: doc['address'],
         checkinDate: doc['checkinDate'],
@@ -280,23 +322,16 @@ Future<void> getActiveRecords() async {
       
       DocumentReference docRef = await recordsCollection.add(record.toMap());
       
+      
       // Refresh the list
       await getAllRecords();
       
-      Get.snackbar(
-        "Success", 
-        "Record added successfully",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      showToast("Record added successfully");
       
       return docRef.id;
     } catch (e) {
       log("Error adding record: $e");
-      Get.snackbar(
-        "Error", 
-        "Failed to add record: $e",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      showErrorToast("Failed to add record: $e");
       return null;
     } finally {
       isLoading.value = false;
@@ -307,7 +342,7 @@ Future<void> getActiveRecords() async {
   Future<bool> updateRecord(String id, GuestRecordModel record) async {
     try {
       if (id.isEmpty) {
-        Get.snackbar("Error", "Record ID is required");
+        showErrorToast("Record ID is required");
         return false;
       }
       
@@ -332,24 +367,18 @@ Future<void> getActiveRecords() async {
       };
       
       await recordsCollection.doc(id).update(updateData);
+
+      Get.back();
       
       // Refresh the list
       await getAllRecords();
       
-      Get.snackbar(
-        "Success", 
-        "Record updated successfully",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      showToast("Record updated successfully");
       
       return true;
     } catch (e) {
       log("Error updating record: $e");
-      Get.snackbar(
-        "Error", 
-        "Failed to update record: $e",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      showErrorToast("Failed to update record: $e");
       return false;
     } finally {
       isLoading.value = false;
@@ -360,7 +389,7 @@ Future<void> getActiveRecords() async {
   Future<bool> deleteRecord(String id) async {
     try {
       if (id.isEmpty) {
-        Get.snackbar("Error", "Record ID is required");
+        showErrorToast("Record ID is required");
         return false;
       }
       
@@ -370,21 +399,18 @@ Future<void> getActiveRecords() async {
       
       // Remove from local list
       records.removeWhere((record) => record.id == id);
+
+      Get.back();
+
+      // Refresh the list
+      await getAllRecords();
       
-      Get.snackbar(
-        "Success", 
-        "Record deleted successfully",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      showToast("Record deleted successfully");
       
       return true;
     } catch (e) {
       log("Error deleting record: $e");
-      Get.snackbar(
-        "Error", 
-        "Failed to delete record: $e",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      showErrorToast("Failed to delete record: $e");
       return false;
     } finally {
       isLoading.value = false;
@@ -395,7 +421,7 @@ Future<void> getActiveRecords() async {
   Future<bool> checkoutGuest(String id, String checkoutDate, String checkoutTime) async {
     try {
       if (id.isEmpty) {
-        Get.snackbar("Error", "Record ID is required");
+        showErrorToast("Record ID is required");
         return false;
       }
       
@@ -404,26 +430,20 @@ Future<void> getActiveRecords() async {
       await recordsCollection.doc(id).update({
         "checkoutDate": checkoutDate,
         "checkoutTime": checkoutTime,
+        "hasCheckedOut": true,
         "updatedAt": DateTime.now(),
       });
+
       
       // Refresh the list
       await getAllRecords();
       
-      Get.snackbar(
-        "Success", 
-        "Guest checked out successfully",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      showToast("Guest checked out successfully");
       
       return true;
     } catch (e) {
       log("Error during checkout: $e");
-      Get.snackbar(
-        "Error", 
-        "Failed to checkout guest: $e",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      showErrorToast("Failed to checkout guest: $e");
       return false;
     } finally {
       isLoading.value = false;

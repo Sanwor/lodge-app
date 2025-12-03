@@ -3,7 +3,6 @@ import 'package:family_home/src/view/manage_rooms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/get_core.dart';
 
 class CustomMenubar extends StatelessWidget {
   const CustomMenubar({super.key});
@@ -79,7 +78,7 @@ class CustomMenubar extends StatelessWidget {
           icon: Icons.meeting_room,
           title: "Manage Rooms",
           onTap: () {
-            Get.to(()=>ManageRooms());
+            Get.to(()=>ManageRoom());
           },
         ),
         _menuItem(
@@ -110,7 +109,7 @@ class CustomMenubar extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
       ),
       onTap: onTap,
-      hoverColor: Colors.orange.withOpacity(0.08),
+      hoverColor: Colors.orange.withValues(alpha: 0.08),
     );
   }
 
@@ -132,7 +131,7 @@ class CustomMenubar extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.r),
         ),
-        hoverColor: Colors.red.withOpacity(0.06),
+        hoverColor: Colors.red.withValues(alpha: 0.06),
       ),
     );
   }

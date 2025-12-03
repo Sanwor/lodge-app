@@ -106,6 +106,8 @@ class MenusController extends GetxController {
       isLoading.value = true;
       
       DocumentReference docRef = await menuCollection.add(menuItem.toMap());
+
+      Get.back();
       
       await getAllMenuItems();
       
@@ -136,6 +138,8 @@ class MenusController extends GetxController {
       isLoading.value = true;
       
       await menuCollection.doc(id).update(menuItem.toMap());
+
+      Get.back();
       
       await getAllMenuItems();
       
@@ -168,6 +172,10 @@ class MenusController extends GetxController {
       await menuCollection.doc(id).delete();
       
       menuItems.removeWhere((item) => item.id == id);
+
+      Get.back();
+      
+      await getAllMenuItems();
       
       showToast("$name deleted successfully");
       

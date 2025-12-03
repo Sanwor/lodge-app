@@ -162,7 +162,6 @@ class _ManageMenuState extends State<ManageMenu> {
                           );
 
                           await menuController.addMenuItem(newItem);
-                          Navigator.pop(context);
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -512,8 +511,6 @@ class _ManageMenuState extends State<ManageMenu> {
 
                         await menuController.updateMenuItem(
                             menuItem.id!, updatedItem);
-
-                        Navigator.pop(context);
                       }
                     },
                     color: orange,
@@ -548,7 +545,6 @@ class _ManageMenuState extends State<ManageMenu> {
       onConfirm: () async {
         if (menuItem.id != null) {
           await menuController.deleteMenuItem(menuItem.id!, menuItem.name);
-          Navigator.pop(context);
         }
       },
     );

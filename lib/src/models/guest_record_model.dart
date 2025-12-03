@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GuestRecordModel {
+  bool? hasCheckedOut;
   String? id;
   final String name;
   final String address;
@@ -20,6 +21,7 @@ class GuestRecordModel {
 
   GuestRecordModel({
     this.id,
+    this.hasCheckedOut = false,
     required this.name,
     required this.address,
     required this.checkinDate,
@@ -40,6 +42,7 @@ class GuestRecordModel {
   Map<String, dynamic> toMap() {
     return {
       "name": name,
+      "hasCheckedOut": hasCheckedOut,
       "address": address,
       "checkinDate": checkinDate,
       "checkinTime": checkinTime,
@@ -60,6 +63,7 @@ class GuestRecordModel {
   // Add fromMap factory constructor for easier deserialization
   factory GuestRecordModel.fromMap(String id, Map<String, dynamic> map) {
     return GuestRecordModel(
+      hasCheckedOut: map["hasCheckedOut"],
       id: id,
       name: map['name'] ?? '',
       address: map['address'] ?? '',
