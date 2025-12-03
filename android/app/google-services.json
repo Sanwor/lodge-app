@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "729680587676",
+    "project_id": "family-home-8938e",
+    "storage_bucket": "family-home-8938e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:729680587676:android:a07ebbd191206f06a8b659",
+        "android_client_info": {
+          "package_name": "com.example.family_home"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwpmm25bYYqJFwGFm0hvkEciS8pzgH_O8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
