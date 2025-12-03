@@ -17,6 +17,9 @@ class CustomTimePicker extends StatefulWidget {
   final VoidCallback? onTap;
   final bool? isDisabled;
 
+  final TimeOfDay? defaultTime;
+  final bool fixedToDefault;
+
   const CustomTimePicker({
     super.key,
     this.headingText,
@@ -31,6 +34,8 @@ class CustomTimePicker extends StatefulWidget {
     this.onChanged,
     this.onTap,
     this.isDisabled,
+    this.defaultTime,
+    this.fixedToDefault = false, 
   });
 
   @override
@@ -38,18 +43,34 @@ class CustomTimePicker extends StatefulWidget {
 }
 
 class _CustomTimePickerState extends State<CustomTimePicker> {
+  @override
+  void initState() {
+    super.initState();
+    
+    // Set default time if provided and controller is empty
+    if (widget.defaultTime != null && widget.controller.text.isEmpty) {
+      final formatted = _formatTime(widget.defaultTime!);
+      widget.controller.text = formatted;
+      
+      if (widget.onChanged != null) {
+        widget.onChanged!(formatted);
+      }
+    }
+  }
+
   Future<void> _pickTime() async {
     if (widget.isDisabled == true) return;
 
+    // Use default time or current time as initial
+    TimeOfDay initialTime = widget.defaultTime ?? TimeOfDay.now();
+    
     TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: initialTime,
     );
 
     if (picked != null) {
-      final formatted =
-          "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
-
+      final formatted = _formatTime(picked);
       widget.controller.text = formatted;
 
       if (widget.onChanged != null) {
@@ -59,6 +80,11 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
       setState(() {});
     }
   }
+
+  String _formatTime(TimeOfDay time) {
+    return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -120,10 +146,11 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
         TextFormField(
           controller: widget.controller,
           readOnly: true,
-          onTap: _pickTime,
+          onTap: widget.fixedToDefault ? null : _pickTime,
           style: interRegular(size: 16.sp, color: black),
           decoration: InputDecoration(
             suffixIcon: const Icon(Icons.access_time, color: Color(0xff808084)),
+            hintText: widget.fixedToDefault ? "12:00 PM" : null,
             hintStyle: interRegular(size: 16.sp, color: txtGrey7),
 
             // Borders copy of CustomTextFormField

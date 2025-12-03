@@ -2,6 +2,9 @@ import 'package:family_home/src/app_config/app_styles.dart';
 import 'package:family_home/src/controllers/record_controller.dart';
 import 'package:family_home/src/models/guest_record_model.dart';
 import 'package:family_home/src/view/add_record.dart';
+import 'package:family_home/src/widget/custom_datepicker.dart';
+import 'package:family_home/src/widget/custom_menubar.dart';
+import 'package:family_home/src/widget/custom_time_picker.dart';
 import 'package:family_home/src/widget/record_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -18,6 +21,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final GuestRecordController recordController = Get.put(GuestRecordController());
   String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+  CustomMenubar drawer = Get.put(CustomMenubar());
 
   @override
   void initState() {
@@ -50,7 +54,8 @@ class _HomePageState extends State<HomePage> {
         onPressed: () => Get.to(() => const AddRecord()),
       ),
 
-      appBar: _buildAppBar(),
+      appBar: _appBar(),
+      drawer: drawer,
       body: Obx(() {
         if (recordController.isLoading.isTrue) {
           return const Center(child: CircularProgressIndicator());
@@ -76,7 +81,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   //app bar
-  AppBar _buildAppBar() {
+  AppBar _appBar() {
     return AppBar(
       backgroundColor: white,
       elevation: 0,
@@ -86,16 +91,6 @@ class _HomePageState extends State<HomePage> {
         "Daily Records",
         style: interBold(size: 18.sp, color: txtBlack),
       ),
-      leading: IconButton(
-        icon: const Icon(Icons.menu),
-        onPressed: () {},
-      ),
-      // actions: [
-      //   IconButton(
-      //     icon: const Icon(Icons.refresh),
-      //     onPressed: _refreshData,
-      //   ),
-      // ],
     );
   }
 
@@ -265,48 +260,29 @@ class _HomePageState extends State<HomePage> {
       content: Padding(
         padding: EdgeInsets.all(16.w),
         child: Column(
-          children: [
-            TextFormField(
-              controller: checkoutDateController,
-              decoration: const InputDecoration(
-                labelText: 'Checkout Date',
-                suffixIcon: Icon(Icons.calendar_today),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 14.h),
+              
+              CustomDatepicker(
+                controller: checkoutDateController,
+                labelText: 'Check-out Date',
+                firstDate: DateTime(1900, 1, 1),
+                onChanged: (value) {
+                  setState(() {});
+                },
               ),
-              readOnly: true,
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: Get.context!,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime.parse(record.checkinDate),
-                  lastDate: DateTime.now().add(const Duration(days: 365)),
-                );
-                if (date != null) {
-                  checkoutDateController.text =
-                      DateFormat('yyyy-MM-dd').format(date);
-                }
-              },
-            ),
-            SizedBox(height: 16.h),
-            TextFormField(
-              controller: checkoutTimeController,
-              decoration: const InputDecoration(
-                labelText: 'Checkout Time',
-                suffixIcon: Icon(Icons.access_time),
+              
+              SizedBox(height: 18.h),
+              
+              CustomTimePicker(
+                controller: checkoutTimeController,
+                defaultTime: const TimeOfDay(hour: 12, minute: 0),
+                fixedToDefault: true,
+                headingText: "Check-out Time",
               ),
-              readOnly: true,
-              onTap: () async {
-                final time = await showTimePicker(
-                  context: Get.context!,
-                  initialTime: TimeOfDay.now(),
-                );
-                if (time != null) {
-                  checkoutTimeController.text = time.format(Get.context!);
-                }
-              },
-            ),
-          ],
-        ),
-      ),
+            ],
+          ), ),
       actions: [
         TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
         ElevatedButton(

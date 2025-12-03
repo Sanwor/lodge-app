@@ -205,11 +205,13 @@ class _AddRecordState extends State<AddRecord> {
               
               CustomTimePicker(
                 controller: checkoutTimeCon,
+                defaultTime: const TimeOfDay(hour: 12, minute: 0),
+                fixedToDefault: true,
                 headingText: "Check-out Time",
               ),
             ],
           ),
-          
+
           SizedBox(height: 30.h),
 
 
@@ -275,6 +277,7 @@ class _AddRecordState extends State<AddRecord> {
             controller: contactCon,
             headingText: "Contact Number",
             keyboardType: TextInputType.phone,
+            maxLength: 10,
             headingTextStyle: interMedium(size: 13.sp),
             hintText: "98XXXXXXXX",
             hintStyle: interRegular(size: 14.sp, color: txtGrey7),
