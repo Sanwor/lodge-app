@@ -18,6 +18,7 @@ class GuestRecordModel {
   final String? checkoutTime;
   final DateTime? createdAt; 
   final DateTime? updatedAt;
+  final String? status;
 
   GuestRecordModel({
     this.id,
@@ -37,6 +38,7 @@ class GuestRecordModel {
     this.checkoutTime,
     this.createdAt,
     this.updatedAt,
+    this.status,
   });
 
   Map<String, dynamic> toMap() {
@@ -57,6 +59,7 @@ class GuestRecordModel {
       "checkoutTime": checkoutTime,
       "createdAt": createdAt ?? DateTime.now(),
       "updatedAt": DateTime.now(),
+      "status": status
     };
   }
 
@@ -76,6 +79,7 @@ class GuestRecordModel {
       reason: map['reason'] ?? '',
       contact: map['contact'] ?? '',
       roomNo: map['roomNo'] ?? '',
+      status: map['status'] ?? '',
       checkoutDate: map['checkoutDate'],
       checkoutTime: map['checkoutTime'],
       createdAt: map['createdAt'] != null 

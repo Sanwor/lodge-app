@@ -23,23 +23,24 @@ class AddRecord extends StatefulWidget {
 }
 
 class _AddRecordState extends State<AddRecord> {
-  GuestRecordController recordController = Get.find<GuestRecordController>();
+  GuestRecordController recordController = Get.put(GuestRecordController());
   final _formKey = GlobalKey<FormState>();
   String? selectedRoomNo; 
 
   //text controllers:
-  final TextEditingController nameCon = TextEditingController();
-  final TextEditingController addressCon = TextEditingController();
-  final TextEditingController checkinDateCon = TextEditingController();
-  final TextEditingController checkinTimeCon = TextEditingController();
-  final TextEditingController citizenshipNoCon = TextEditingController();
-  final TextEditingController occupationCon = TextEditingController();
-  final TextEditingController noPeopleCon = TextEditingController();
-  final TextEditingController relationCon = TextEditingController();
-  final TextEditingController reasonCon = TextEditingController();
-  final TextEditingController contactCon = TextEditingController();
-  final TextEditingController checkoutDateCon = TextEditingController();
-  final TextEditingController checkoutTimeCon = TextEditingController();
+  final TextEditingController nameCon           = TextEditingController();
+  final TextEditingController addressCon        = TextEditingController();
+  final TextEditingController checkinDateCon    = TextEditingController();
+  final TextEditingController checkinTimeCon    = TextEditingController();
+  final TextEditingController citizenshipNoCon  = TextEditingController();
+  final TextEditingController occupationCon     = TextEditingController();
+  final TextEditingController noPeopleCon       = TextEditingController();
+  final TextEditingController relationCon       = TextEditingController();
+  final TextEditingController reasonCon         = TextEditingController();
+  final TextEditingController contactCon        = TextEditingController();
+  final TextEditingController checkoutDateCon   = TextEditingController();
+  final TextEditingController checkoutTimeCon   = TextEditingController();
+  final TextEditingController statusCon         = TextEditingController();
 
   @override
   void initState() {
@@ -75,9 +76,10 @@ class _AddRecordState extends State<AddRecord> {
         relationCon.text = record.relation;
         reasonCon.text = record.reason;
         contactCon.text = record.contact;
+        contactCon.text = record.contact;
         selectedRoomNo = record.roomNo; // Set selected room
         checkoutDateCon.text = record.checkoutDate ?? '';
-        checkoutTimeCon.text = record.checkoutTime ?? '';
+        statusCon.text = 'booked';
       });
     }
   }
@@ -134,6 +136,7 @@ class _AddRecordState extends State<AddRecord> {
                       reason: reasonCon.text.trim(),
                       contact: contactCon.text.trim(),
                       roomNo: selectedRoomNo ?? '',
+                      status: 'booked',
                       checkoutDate: null,
                       checkoutTime: null,
                     );

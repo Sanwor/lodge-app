@@ -1,5 +1,9 @@
 // lib/src/view/manage_room.dart
+import 'dart:developer';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:family_home/src/app_config/app_styles.dart';
+import 'package:family_home/src/controllers/record_controller.dart';
 import 'package:family_home/src/controllers/room_controller.dart';
 import 'package:family_home/src/models/room_model.dart';
 import 'package:family_home/src/widget/custom_button.dart';
@@ -17,11 +21,13 @@ class ManageRoom extends StatefulWidget {
 
 class _ManageRoomState extends State<ManageRoom> {
   final RoomController roomController = Get.put(RoomController());
+  final GuestRecordController recordController = Get.find<GuestRecordController>();
 
   @override
   void initState() {
     super.initState();
     roomController.getAllRooms();
+    roomController.getOccupiedRooms();
   }
 
   @override
@@ -289,138 +295,185 @@ class _ManageRoomState extends State<ManageRoom> {
   }
 
   Widget _buildRoomCard(RoomModel room) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                // Room Icon
-                Container(
-                  width: 60.w,
-                  height: 60.w,
-                  decoration: BoxDecoration(
-                    color: orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  child: Icon(Icons.meeting_room, color: orange, size: 30.w),
-                ),
-                SizedBox(width: 16.w),
-                
-                // Room Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Room ${room.roomNumber}",
-                            style: interBold(size: 16.sp, color: txtBlack),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8.w,
-                              vertical: 4.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: room.isAvailable
-                                  ? Colors.green.withValues(alpha: 0.1)
-                                  : Colors.red.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6.r),
-                            ),
-                            child: Text(
-                              room.isAvailable ? 'Available' : 'Occupied',
-                              style: interMedium(
-                                size: 12.sp,
-                                color: room.isAvailable ? Colors.green : Colors.red,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        room.roomType,
-                        style: interMedium(size: 14.sp, color: txtBlue),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        room.description,
-                        style: interRegular(size: 14.sp, color: txtGrey2),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 8.h),
-                      Row(
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.people, size: 14.w, color: txtGrey2),
-                              SizedBox(width: 4.w),
-                              Text(
-                                "${room.capacity} Persons",
-                                style: interRegular(size: 12.sp, color: txtGrey2),
-                              ),
-                            ],
-                          ),
-                          Spacer(),
-                          Text(
-                            'Rs. ${room.pricePerDay.toStringAsFixed(0)}/day',
-                            style: interBold(size: 16.sp, color: orange),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            
-            // Action Buttons
-            SizedBox(height: 12.h),
-            Divider(color: Colors.grey.shade200),
-            SizedBox(height: 8.h),
-            
-            Row(
-              children: [
-                // Edit Button
-                Expanded(
-                  child: CustomButton(
-                    text: "Edit Room",
-                    color: txtBlue,
-                    onTap: () => _showEditDialog(room),
-                    height: 40.h,
-                    width: 80.w,
-                  ),
-                ),
-                SizedBox(width: 8.w),
-                
-                // Delete Button
-                Expanded(
-                  child: CustomButton(
-                    text: "Delete",
-                    color: Colors.red,
-                    onTap: () => _showDeleteDialog(room),
-                    height: 40.h,
-                    width: 80.w,
-                  ),
-                ),
-              ],
-            ),
-          ],
+  return FutureBuilder<bool>(
+    future: _checkRoomOccupancy(room.roomNumber),
+    builder: (context, snapshot) {
+      bool isOccupied = snapshot.data ?? false;
+      bool isLoading = snapshot.connectionState == ConnectionState.waiting;
+      
+      return Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
         ),
-      ),
-    );
-  }
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  // Room Icon
+                  Container(
+                    width: 60.w,
+                    height: 60.w,
+                    decoration: BoxDecoration(
+                      color: orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    child: Icon(Icons.meeting_room, color: orange, size: 30.w),
+                  ),
+                  SizedBox(width: 16.w),
+                  
+                  // Room Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Room ${room.roomNumber}",
+                              style: interBold(size: 16.sp, color: txtBlack),
+                            ),
+                            if (isLoading)
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8.w,
+                                  vertical: 4.h,
+                                ),
+                                child: SizedBox(
+                                  width: 12.w,
+                                  height: 12.w,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              )
+                            else
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8.w,
+                                  vertical: 4.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isOccupied
+                                      ? Colors.red.withValues(alpha: 0.1)
+                                      : Colors.green.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6.r),
+                                ),
+                                child: Text(
+                                  isOccupied ? 'Occupied' : 'Available',
+                                  style: interMedium(
+                                    size: 12.sp,
+                                    color: isOccupied ? Colors.red : Colors.green,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          room.roomType,
+                          style: interMedium(size: 14.sp, color: txtBlue),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          room.description,
+                          style: interRegular(size: 14.sp, color: txtGrey2),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 8.h),
+                        Row(
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.people, size: 14.w, color: txtGrey2),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  "${room.capacity} Persons",
+                                  style: interRegular(size: 12.sp, color: txtGrey2),
+                                ),
+                              ],
+                            ),
+                            Spacer(),
+                            Text(
+                              'Rs. ${room.pricePerDay.toStringAsFixed(0)}/day',
+                              style: interBold(size: 16.sp, color: orange),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              
+              // Action Buttons
+              SizedBox(height: 12.h),
+              Divider(color: Colors.grey.shade200),
+              SizedBox(height: 8.h),
+              
+              Row(
+                children: [
+                  // Edit Button
+                  Expanded(
+                    child: CustomButton(
+                      text: "Edit Room",
+                      color: isOccupied ? Colors.grey : txtBlue,
+                      onTap: isOccupied ? null : () => _showEditDialog(room),
+                      height: 40.h,
+                      width: 80.w,
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  
+                  // Delete Button
+                  Expanded(
+                    child: CustomButton(
+                      text: "Delete",
+                      color: isOccupied ? Colors.grey : Colors.red,
+                      onTap: isOccupied ? null : () => _showDeleteDialog(room),
+                      height: 40.h,
+                      width: 80.w,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
 
+
+  // Helper method
+  Future<bool> _checkRoomOccupancy(String roomNumber) async {
+    try {
+      // First check active records locally
+      final recordController = Get.find<GuestRecordController>();
+      bool hasLocalOccupancy = recordController.records.any((record) =>
+          record.roomNo == roomNumber &&
+          (record.checkoutDate == null || record.checkoutDate!.isEmpty));
+      
+      if (hasLocalOccupancy) return true;
+      
+      // If not found locally, check Firestore
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('guest_records')
+          .where('roomNo', isEqualTo: roomNumber)
+          .where('checkoutDate', whereIn: [null, ''])
+          .limit(1)
+          .get();
+      
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      log("Error checking occupancy for room $roomNumber: $e");
+      return false;
+    }
+  }
 
   //edit room dialogue
   void _showEditDialog(RoomModel room) {

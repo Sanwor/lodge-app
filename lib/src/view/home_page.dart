@@ -2,9 +2,8 @@ import 'package:family_home/src/app_config/app_styles.dart';
 import 'package:family_home/src/controllers/record_controller.dart';
 import 'package:family_home/src/models/guest_record_model.dart';
 import 'package:family_home/src/view/add_record.dart';
-import 'package:family_home/src/widget/custom_datepicker.dart';
+import 'package:family_home/src/view/checkout_page.dart';
 import 'package:family_home/src/widget/custom_menubar.dart';
-import 'package:family_home/src/widget/custom_time_picker.dart';
 import 'package:family_home/src/widget/record_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -18,15 +17,24 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   final GuestRecordController recordController = Get.put(GuestRecordController());
   String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   CustomMenubar drawer = Get.put(CustomMenubar());
+  late final TabController _tabController;
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     _initialize();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _initialize() async {
@@ -68,7 +76,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 _buildHeader(),
                 SizedBox(height: 16.h),
-                _buildFilterButtons(),
+                _buildTabBar(),
                 SizedBox(height: 16.h),
                 _buildRecordList(),
                 SizedBox(height: 20.h),
@@ -121,78 +129,51 @@ class _HomePageState extends State<HomePage> {
   }
 
   //filter buttons 
-  Widget _buildFilterButtons() {
+  Widget _buildTabBar() {
     String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Row(
-        children: [
-          _filterButton(
-            text: "Today",
-            active: formattedDate == today,
-            activeColor: orange,
-            onTap: () {
-              setState(() => formattedDate = today);
-              recordController.getRecordsByDate(today);
-            },
-          ),
-          SizedBox(width: 10.w),
-
-          _filterButton(
-            text: "Active",
-            active: formattedDate == "Active Guests",
-            activeColor: Colors.green,
-            onTap: () {
-              setState(() => formattedDate = "Active Guests");
-              recordController.getActiveRecords();
-            },
-          ),
-          SizedBox(width: 10.w),
-
-          _filterButton(
-            text: "All",
-            active: formattedDate == "All Records",
-            activeColor: txtBlue,
-            onTap: () {
-              setState(() => formattedDate = "All Records");
-              recordController.getAllRecords();
-            },
-          ),
-        ],
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8.r),
       ),
-    );
-  }
-
-  Widget _filterButton({
-    required String text,
-    required bool active,
-    required Color activeColor,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 8.h),
-          decoration: BoxDecoration(
-            color: active ? activeColor : Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Center(
-            child: Text(
-              text,
-              style: interMedium(
-                size: 14.sp,
-                color: active ? Colors.white : txtGrey2,
-              ),
-            ),
-          ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          color: orange,
+          borderRadius: BorderRadius.circular(8.r),
         ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: Colors.white,
+        unselectedLabelColor: txtGrey2,
+        labelStyle: interMedium(size: 14.sp),
+        unselectedLabelStyle: interMedium(size: 14.sp),
+        splashFactory: NoSplash.splashFactory,
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        tabs: const [
+          Tab(text: "Today"),
+          Tab(text: "Active"),
+          Tab(text: "All"),
+        ],
+        onTap: (index) {
+          setState(() {
+            _currentTabIndex = index;
+            if (index == 0) {
+              formattedDate = today;
+              recordController.getRecordsByDate(today);
+            } else if (index == 1) {
+              formattedDate = "Active Guests";
+              recordController.getActiveRecords();
+            } else {
+              formattedDate = "All Records";
+              recordController.getAllRecords();
+            }
+          });
+        },
       ),
     );
   }
-
   //record list
   Widget _buildRecordList() {
     if (recordController.records.isEmpty) {
@@ -215,13 +196,10 @@ class _HomePageState extends State<HomePage> {
             address: record.address,
             roomNo: record.roomNo,
             isCheckedOut: record.checkoutDate != null,
-            onTap: () => Get.to(() => AddRecord(
-                  isUpdate: true,
-                  recordId: record.id,
-                )),
+            onTap: () {},
             onTapCheckout: record.checkoutDate == null
-                ? () => _showCheckoutDialog(record)
-                : null,
+              ? () => Get.to(() => CheckoutPage(record: record))
+              : null,
             onDelete: () => _showDeleteDialog(record),
           );
         },
@@ -248,61 +226,61 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  //checkout
-  void _showCheckoutDialog(GuestRecordModel record) {
-    final checkoutDateController =
-        TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
-    final checkoutTimeController =
-        TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
+  // //checkout
+  // void _showCheckoutDialog(GuestRecordModel record) {
+  //   final checkoutDateController =
+  //       TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
+  //   final checkoutTimeController =
+  //       TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
 
-    Get.defaultDialog(
-      title: "Checkout Guest",
-      content: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 14.h),
+  //   Get.defaultDialog(
+  //     title: "Checkout Guest",
+  //     content: Padding(
+  //       padding: EdgeInsets.all(16.w),
+  //       child: Column(
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             SizedBox(height: 14.h),
               
-              CustomDatepicker(
-                controller: checkoutDateController,
-                labelText: 'Check-out Date',
-                firstDate: DateTime(1900, 1, 1),
-                onChanged: (value) {
-                  setState(() {});
-                },
-              ),
+  //             CustomDatepicker(
+  //               controller: checkoutDateController,
+  //               labelText: 'Check-out Date',
+  //               firstDate: DateTime(1900, 1, 1),
+  //               onChanged: (value) {
+  //                 setState(() {});
+  //               },
+  //             ),
               
-              SizedBox(height: 18.h),
+  //             SizedBox(height: 18.h),
               
-              CustomTimePicker(
-                controller: checkoutTimeController,
-                defaultTime: const TimeOfDay(hour: 12, minute: 0),
-                fixedToDefault: true,
-                headingText: "Check-out Time",
-              ),
-            ],
-          ), ),
-      actions: [
-        TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
-        ElevatedButton(
-          onPressed: () async {
-            if (record.id == null) return;
+  //             CustomTimePicker(
+  //               controller: checkoutTimeController,
+  //               defaultTime: const TimeOfDay(hour: 12, minute: 0),
+  //               fixedToDefault: true,
+  //               headingText: "Check-out Time",
+  //             ),
+  //           ],
+  //         ), ),
+  //     actions: [
+  //       TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
+  //       ElevatedButton(
+  //         onPressed: () async {
+  //           if (record.id == null) return;
 
-            bool success = await recordController.checkoutGuest(
-              record.id!,
-              checkoutDateController.text,
-              checkoutTimeController.text,
-            );
-
-            if (success) Get.back();
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: orange),
-          child: const Text("Checkout", style: TextStyle(color: Colors.white)),
-        ),
-      ],
-    );
-  }
+  //           recordController.checkoutGuest(
+  //           record.id!,
+  //           checkoutDateController.text,
+  //           checkoutTimeController.text,
+  //         );
+          
+  //         Get.back();
+  //         },
+  //         style: ElevatedButton.styleFrom(backgroundColor: orange),
+  //         child: const Text("Checkout", style: TextStyle(color: Colors.white)),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   //delete
   void _showDeleteDialog(GuestRecordModel record) {

@@ -1,58 +1,54 @@
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:family_home/src/controllers/room_controller.dart';
 import 'package:family_home/src/models/guest_record_model.dart';
 import 'package:family_home/src/widget/custom_toast.dart';
 import 'package:get/get.dart';
 
 class GuestRecordController extends GetxController {
+  RoomController roomController = Get.put(RoomController());
+
   RxBool isLoading = false.obs;
   RxList<GuestRecordModel> records = <GuestRecordModel>[].obs;
   RxList<String> availableRooms = <String>[].obs;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
-  //get available rooms
+  // GET AVAILABLE ROOMS
   Future<void> getAvailableRooms() async {
     try {
-      // First get all rooms from rooms collection
       var roomsSnapshot = await FirebaseFirestore.instance
           .collection('rooms')
           .orderBy('roomNumber')
           .get();
 
-      // Get all active guest records to find occupied rooms
       var activeGuests = await recordsCollection
-          .where('checkoutDate')
+          .where('checkoutDate', isNull: true) // only guests NOT checked out
           .get();
-      
-      // Extract occupied room numbers
-      List<String> occupiedRooms = [];
-      for (var doc in activeGuests.docs) {
-        final roomNo = doc['roomNo'];
-        if (roomNo != null && roomNo.isNotEmpty) {
-          occupiedRooms.add(roomNo);
-        }
-      }
-      
-      // Get all room numbers and filter out occupied ones
-      List<String> allRooms = [];
-      for (var doc in roomsSnapshot.docs) {
-        final roomNo = doc['roomNumber'];
-        if (roomNo != null && roomNo.isNotEmpty) {
-          allRooms.add(roomNo);
-        }
-      }
-      
-      // Filter to get available rooms
-      availableRooms.value = allRooms
+
+      // Extract occupied rooms
+      List<String> occupiedRooms = activeGuests.docs
+          .map((doc) => doc['roomNo'] as String)
+          .where((room) => room.isNotEmpty)
+          .toList();
+
+      // All rooms
+      List<String> allRooms = roomsSnapshot.docs
+          .map((doc) => doc['roomNumber'] as String)
+          .where((room) => room.isNotEmpty)
+          .toList();
+
+      // Filter available rooms
+      List<String> available = allRooms
           .where((room) => !occupiedRooms.contains(room))
           .toList()
-          ..sort();
-      
-      // If no rooms are available, show all rooms
-      if (availableRooms.isEmpty) {
-        availableRooms.value = allRooms..sort();
+        ..sort();
+
+      // Update observable list
+      if (available.isEmpty) {
+        availableRooms.value = ["No Rooms Available"];
+      } else {
+        availableRooms.value = available;
       }
-      
     } catch (e) {
       log("Error fetching available rooms: $e");
       availableRooms.clear();
@@ -102,98 +98,66 @@ class GuestRecordController extends GetxController {
 
   /// GET RECORDS BY DATE (Now with ordering since index is created)
   Future<void> getRecordsByDate(String date) async {
-  try {
-    isLoading.value = true;
-    
-    QuerySnapshot querySnapshot = await recordsCollection
-        .where('checkinDate', isEqualTo: date)
-        .orderBy('createdAt', descending: true) // Now this should work
-        .get();
-
-        print(querySnapshot.docs);
-
-    records.value = querySnapshot.docs.map((doc) {
-      return GuestRecordModel(
-        id: doc.id,
-        name: doc['name'],
-        address: doc['address'],
-        checkinDate: doc['checkinDate'],
-        checkinTime: doc['checkinTime'],
-        citizenshipNo: doc['citizenshipNo'],
-        occupation: doc['occupation'],
-        noPeople: doc['noPeople'],
-        relation: doc['relation'],
-        reason: doc['reason'],
-        contact: doc['contact'],
-        roomNo: doc['roomNo'],
-        checkoutDate: doc['checkoutDate'],
-        checkoutTime: doc['checkoutTime'],
-        createdAt: doc['createdAt'] != null 
-            ? (doc['createdAt'] as Timestamp).toDate()
-            : null,
-        updatedAt: doc['updatedAt'] != null 
-            ? (doc['updatedAt'] as Timestamp).toDate()
-            : null,
-      );
-    }).toList();
-    
-  } catch (e) {
-    log("Error fetching records by date: $e");
-    
-    // If still getting index error even after creation
-    if (e.toString().contains('index')) {
-      showErrorToast("Please wait 1-2 minutes for the index to finish building");
+    try {
+      isLoading.value = true;
       
-      // Fallback: fetch without ordering
-      await _getRecordsByDateWithoutOrdering(date);
-    } else {
+      QuerySnapshot querySnapshot = await recordsCollection
+          .where('checkinDate', isEqualTo: date)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      records.value = querySnapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        
+        // Convert checkinDate if it's Timestamp
+        String checkinDate;
+        if (data['checkinDate'] is Timestamp) {
+          checkinDate = (data['checkinDate'] as Timestamp).toDate().toString().split(' ')[0];
+        } else {
+          checkinDate = data['checkinDate'].toString();
+        }
+        
+        // Convert checkoutDate if it's Timestamp
+        String? checkoutDate;
+        if (data['checkoutDate'] != null) {
+          if (data['checkoutDate'] is Timestamp) {
+            checkoutDate = (data['checkoutDate'] as Timestamp).toDate().toString();
+          } else {
+            checkoutDate = data['checkoutDate'].toString();
+          }
+        }
+        
+        return GuestRecordModel(
+          id: doc.id,
+          name: data['name']?.toString() ?? '',
+          address: data['address']?.toString() ?? '',
+          checkinDate: checkinDate,
+          checkinTime: data['checkinTime']?.toString() ?? '',
+          citizenshipNo: data['citizenshipNo']?.toString() ?? '',
+          occupation: data['occupation']?.toString() ?? '',
+          noPeople: data['noPeople']?.toString() ?? '',
+          relation: data['relation']?.toString() ?? '',
+          reason: data['reason']?.toString() ?? '',
+          contact: data['contact']?.toString() ?? '',
+          roomNo: data['roomNo']?.toString() ?? '',
+          checkoutDate: checkoutDate,
+          checkoutTime: data['checkoutTime']?.toString(),
+          createdAt: data['createdAt'] != null 
+              ? (data['createdAt'] as Timestamp).toDate()
+              : null,
+          updatedAt: data['updatedAt'] != null 
+              ? (data['updatedAt'] as Timestamp).toDate()
+              : null,
+        );
+      }).toList();
+      
+    } catch (e) {
+      log("Error fetching records by date: $e");
       records.clear();
-      showErrorToast("Failed to load records");
+    } finally {
+      isLoading.value = false;
     }
-  } finally {
-    isLoading.value = false;
   }
-}
-
-// Fallback method without ordering
-Future<void> _getRecordsByDateWithoutOrdering(String date) async {
-  try {
-    QuerySnapshot querySnapshot = await recordsCollection
-        .where('checkinDate', isEqualTo: date)
-        .get();
-
-    List<GuestRecordModel> tempRecords = querySnapshot.docs.map((doc) {
-      return GuestRecordModel(
-        id: doc.id,
-        name: doc['name'],
-        address: doc['address'],
-        checkinDate: doc['checkinDate'],
-        checkinTime: doc['checkinTime'],
-        citizenshipNo: doc['citizenshipNo'],
-        occupation: doc['occupation'],
-        noPeople: doc['noPeople'],
-        relation: doc['relation'],
-        reason: doc['reason'],
-        contact: doc['contact'],
-        roomNo: doc['roomNo'],
-        checkoutDate: doc['checkoutDate'],
-        checkoutTime: doc['checkoutTime'],
-        createdAt: doc['createdAt'] != null 
-            ? (doc['createdAt'] as Timestamp).toDate()
-            : null,
-      );
-    }).toList();
-    
-    // Sort locally
-    tempRecords.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
-    
-    records.value = tempRecords;
-    
-  } catch (e) {
-    log("Fallback fetch error: $e");
-    records.clear();
-  }
-}
 
   /// GET RECORDS BY ROOM NUMBER
   Future<List<GuestRecordModel>> getRecordsByRoom(String roomNo) async {
@@ -232,10 +196,12 @@ Future<void> _getRecordsByDateWithoutOrdering(String date) async {
 Future<void> getActiveRecords() async {
   try {
     isLoading.value = true;
-    
+    records.clear();
+
+    // Fetch only guests who have NOT checked out
     QuerySnapshot querySnapshot = await recordsCollection
-        .where('hasCheckedOut', isNotEqualTo: true)
-        .orderBy('checkinDate', descending: true) // This might need an index too
+        .where('hasCheckedOut', isEqualTo: false)
+        .orderBy('checkinDate', descending: true)
         .get();
 
     records.value = querySnapshot.docs.map((doc) {
@@ -255,16 +221,16 @@ Future<void> getActiveRecords() async {
         roomNo: doc['roomNo'],
         checkoutDate: doc['checkoutDate'],
         checkoutTime: doc['checkoutTime'],
-        createdAt: doc['createdAt'] != null 
+        createdAt: doc['createdAt'] != null
             ? (doc['createdAt'] as Timestamp).toDate()
             : null,
       );
     }).toList();
-    
+
   } catch (e) {
     log("Error fetching active records: $e");
-    
-    // If index error, fetch without ordering
+
+    // Fix for Firestore index error
     if (e.toString().contains('index')) {
       await _getActiveRecordsWithoutOrdering();
     } else {
@@ -275,7 +241,7 @@ Future<void> getActiveRecords() async {
   }
 }
 
-// Fallback for active records
+  // Fallback for active records
   Future<void> _getActiveRecordsWithoutOrdering() async {
     try {
       QuerySnapshot querySnapshot = await recordsCollection
@@ -418,37 +384,28 @@ Future<void> getActiveRecords() async {
   }
 
   /// CHECKOUT GUEST
-  Future<bool> checkoutGuest(String id, String checkoutDate, String checkoutTime) async {
+  Future<bool> checkoutGuest(String guestId, String checkoutDate, String checkoutTime) async {
     try {
-      if (id.isEmpty) {
-        showErrorToast("Record ID is required");
-        return false;
-      }
+      if (guestId.isEmpty) return false;
       
-      isLoading.value = true;
-      
-      await recordsCollection.doc(id).update({
-        "checkoutDate": checkoutDate,
-        "checkoutTime": checkoutTime,
-        "hasCheckedOut": true,
-        "updatedAt": DateTime.now(),
+      // Update guest record
+      await recordsCollection.doc(guestId).update({
+        'checkoutDate': checkoutDate,
+        'checkoutTime': checkoutTime,
+        'hasCheckedOut': true, // Add this field
+        'updatedAt': DateTime.now(),
       });
-
       
-      // Refresh the list
+      // Refresh data
       await getAllRecords();
-      
-      showToast("Guest checked out successfully");
       
       return true;
     } catch (e) {
-      log("Error during checkout: $e");
-      showErrorToast("Failed to checkout guest: $e");
+      log("Checkout error: $e");
       return false;
-    } finally {
-      isLoading.value = false;
     }
   }
+
 
   /// SEARCH RECORDS
   Future<void> searchRecords(String query) async {

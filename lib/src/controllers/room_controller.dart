@@ -9,6 +9,7 @@ class RoomController extends GetxController {
   RxBool isLoading = false.obs;
   RxList<RoomModel> rooms = <RoomModel>[].obs;
   RxList<String> roomTypes = <String>[].obs;
+  RxList<String> occupiedRooms = <String>[].obs;
   
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   CollectionReference get roomsCollection => _firestore.collection('rooms');
@@ -30,7 +31,37 @@ class RoomController extends GetxController {
       'Other'
     ];
   }
+  
+  /// GET OCCUPIED ROOMS (rooms with active guests)
+  Future<void> getOccupiedRooms() async {
+    try {
+      // Get all guests who haven't checked out
+      QuerySnapshot activeGuests = await FirebaseFirestore.instance
+          .collection('guest_records') // Your guest collection name
+          .where('checkoutDate', whereIn: [null, ''])
+          .get();
+      
+      // Extract occupied room numbers
+      List<String> occupied = [];
+      for (var doc in activeGuests.docs) {
+        final roomNo = doc['roomNo'];
+        if (roomNo != null && roomNo.isNotEmpty && !occupied.contains(roomNo)) {
+          occupied.add(roomNo);
+        }
+      }
+      
+      occupiedRooms.value = occupied;
+      
+    } catch (e) {
+      log("Error fetching occupied rooms: $e");
+      occupiedRooms.clear();
+    }
+  }
 
+  bool isRoomOccupied(String roomNumber) {
+    return occupiedRooms.contains(roomNumber);
+  }
+  
   /// GET ALL ROOMS
   Future<void> getAllRooms() async {
     try {
@@ -163,21 +194,36 @@ class RoomController extends GetxController {
     }
   }
 
-  /// TOGGLE ROOM AVAILABILITY
-  Future<bool> toggleRoomAvailability(String id, bool currentStatus) async {
+  /// TOGGLE ROOM AVAILABILITY BY ROOM NUMBER
+  Future<bool> toggleRoomAvailabilityByNumber(String roomNumber, bool makeAvailable) async {
     try {
-      if (id.isEmpty) return false;
+      if (roomNumber.isEmpty) return false;
       
-      await roomsCollection.doc(id).update({
-        'isAvailable': !currentStatus,
+      // Find room by room number
+      QuerySnapshot roomQuery = await FirebaseFirestore.instance
+          .collection('rooms')
+          .where('roomNumber', isEqualTo: roomNumber)
+          .limit(1)
+          .get();
+      
+      if (roomQuery.docs.isEmpty) {
+        log("Room $roomNumber not found");
+        return false;
+      }
+      
+      String roomId = roomQuery.docs.first.id;
+      
+      // Update room availability
+      await roomsCollection.doc(roomId).update({
+        'isAvailable': makeAvailable,
         'updatedAt': DateTime.now(),
       });
       
       // Update local list
-      final index = rooms.indexWhere((room) => room.id == id);
+      final index = rooms.indexWhere((room) => room.id == roomId);
       if (index != -1) {
         rooms[index] = rooms[index].copyWith(
-          isAvailable: !currentStatus,
+          isAvailable: makeAvailable,
         );
         rooms.refresh();
       }
