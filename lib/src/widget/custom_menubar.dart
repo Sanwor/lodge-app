@@ -1,3 +1,4 @@
+import 'package:family_home/src/view/calendar.dart';
 import 'package:family_home/src/view/manage_menu.dart';
 import 'package:family_home/src/view/manage_rooms.dart';
 import 'package:flutter/material.dart';
@@ -82,9 +83,11 @@ class CustomMenubar extends StatelessWidget {
           },
         ),
         _menuItem(
-          icon: Icons.people,
-          title: "Guests",
-          onTap: () {},
+          icon: Icons.calendar_month,
+          title: "Calendar",
+          onTap: () {
+            Get.to(()=>Calendar());
+          },
         ),
       ],
     );

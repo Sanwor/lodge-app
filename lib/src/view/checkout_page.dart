@@ -87,17 +87,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return Scaffold(
       backgroundColor: const Color(0xffF6F6F6),
       
-      appBar: AppBar(
-        backgroundColor: white,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: IconThemeData(color: txtBlack),
-        title: Text(
-          "Checkout & Billing",
-          style: interBold(size: 18.sp, color: txtBlack),
-        ),
-      ),
-      
+      appBar: _appBar(),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
         child: Column(
@@ -133,6 +123,22 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   // ============ WIDGETS ============
+
+  //AppBar
+  _appBar(){
+    return AppBar(
+        backgroundColor: white,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(onPressed: () {
+          Get.back();
+        }, icon: Icon(Icons.arrow_back_ios_new_outlined)),
+        title: Text(
+          "Checkout & Billing",
+          style: interBold(size: 18.sp, color: txtBlack),
+        ),
+      );
+  }
 
   // Guest Header
   guestHeader() {

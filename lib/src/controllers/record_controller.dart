@@ -4,6 +4,7 @@ import 'package:family_home/src/controllers/room_controller.dart';
 import 'package:family_home/src/models/guest_record_model.dart';
 import 'package:family_home/src/widget/custom_toast.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class GuestRecordController extends GetxController {
   RoomController roomController = Get.put(RoomController());
@@ -484,6 +485,54 @@ Future<void> getActiveRecords() async {
     } catch (e) {
       log("Error getting record by ID: $e");
       return null;
+    }
+  }
+
+  //GET BOOKINGS FOR CALENDAR
+  Future<Map<DateTime, List<GuestRecordModel>>> getCalendarBookings() async {
+    try {
+      QuerySnapshot querySnapshot = await recordsCollection.get();
+      
+      Map<DateTime, List<GuestRecordModel>> events = {};
+      
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final record = GuestRecordModel(
+          id: doc.id,
+          name: data['name']?.toString() ?? '',
+          address: data['address']?.toString() ?? '',
+          checkinDate: data['checkinDate']?.toString() ?? '',
+          checkinTime: data['checkinTime']?.toString() ?? '',
+          citizenshipNo: data['citizenshipNo']?.toString() ?? '',
+          occupation: data['occupation']?.toString() ?? '',
+          noPeople: data['noPeople']?.toString() ?? '',
+          relation: data['relation']?.toString() ?? '',
+          reason: data['reason']?.toString() ?? '',
+          contact: data['contact']?.toString() ?? '',
+          roomNo: data['roomNo']?.toString() ?? '',
+          status: data['status']?.toString() ?? '',
+          checkoutDate: data['checkoutDate']?.toString(),
+          checkoutTime: data['checkoutTime']?.toString(),
+        );
+        
+        // Parse checkin date
+        try {
+          final checkinDate = DateFormat('yyyy-MM-dd').parse(record.checkinDate);
+          final dateKey = DateTime(checkinDate.year, checkinDate.month, checkinDate.day);
+          
+          if (!events.containsKey(dateKey)) {
+            events[dateKey] = [];
+          }
+          events[dateKey]!.add(record);
+        } catch (e) {
+          continue;
+        }
+      }
+      
+      return events;
+    } catch (e) {
+      log("Error fetching calendar bookings: $e");
+      return {};
     }
   }
 

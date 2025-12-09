@@ -22,6 +22,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   CustomMenubar drawer = Get.put(CustomMenubar());
   late final TabController _tabController;
+  // ignore: unused_field
   int _currentTabIndex = 0;
 
   @override
