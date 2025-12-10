@@ -44,7 +44,7 @@ class GuestRecordModel {
   Map<String, dynamic> toMap() {
     return {
       "name": name,
-      "hasCheckedOut": hasCheckedOut,
+      "hasCheckedOut": hasCheckedOut ?? false,
       "address": address,
       "checkinDate": checkinDate,
       "checkinTime": checkinTime,

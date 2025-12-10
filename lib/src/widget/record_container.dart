@@ -7,7 +7,7 @@ class RecordContainer extends StatelessWidget {
   final String name;
   final String address;
   final String roomNo;
-  final bool isCheckedOut;
+  final bool? isCheckedOut;
   final VoidCallback onTap;
   final VoidCallback? onTapCheckout;
   final VoidCallback? onDelete;
@@ -18,7 +18,7 @@ class RecordContainer extends StatelessWidget {
     required this.name,
     required this.address,
     required this.roomNo,
-    this.isCheckedOut = false,
+    this.isCheckedOut,
     required this.onTap,
     this.onTapCheckout,
     this.onDelete,
@@ -48,7 +48,7 @@ class RecordContainer extends StatelessWidget {
               width: 8.w,
               height: 50.h,
               decoration: BoxDecoration(
-                color: isCheckedOut ? Colors.grey : Colors.green,
+                color: isCheckedOut == true ? Colors.grey : Colors.green,
                 borderRadius: BorderRadius.circular(4.r),
               ),
             ),
@@ -69,14 +69,14 @@ class RecordContainer extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                         decoration: BoxDecoration(
-                          color: isCheckedOut ? Colors.grey.shade200 : Colors.green.shade50,
+                          color: isCheckedOut == true ? Colors.grey.shade200 : Colors.green.shade50,
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                         child: Text(
-                          isCheckedOut ? "Checked Out" : "Active",
+                          isCheckedOut == true ? "Checked Out" : "Active",
                           style: interMedium(
                             size: 12.sp,
-                            color: isCheckedOut ? Colors.grey : Colors.green,
+                            color: isCheckedOut == true ? Colors.grey : Colors.green,
                           ),
                         ),
                       ),

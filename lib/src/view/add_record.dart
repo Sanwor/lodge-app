@@ -26,6 +26,8 @@ class _AddRecordState extends State<AddRecord> {
   GuestRecordController recordController = Get.put(GuestRecordController());
   final _formKey = GlobalKey<FormState>();
   String? selectedRoomNo; 
+  String? statusCon; 
+  String? selectedCheckinDate;
 
   //text controllers:
   final TextEditingController nameCon           = TextEditingController();
@@ -40,7 +42,6 @@ class _AddRecordState extends State<AddRecord> {
   final TextEditingController contactCon        = TextEditingController();
   final TextEditingController checkoutDateCon   = TextEditingController();
   final TextEditingController checkoutTimeCon   = TextEditingController();
-  final TextEditingController statusCon         = TextEditingController();
 
   @override
   void initState() {
@@ -77,9 +78,9 @@ class _AddRecordState extends State<AddRecord> {
         reasonCon.text = record.reason;
         contactCon.text = record.contact;
         contactCon.text = record.contact;
-        selectedRoomNo = record.roomNo; // Set selected room
+        selectedRoomNo = record.roomNo; 
         checkoutDateCon.text = record.checkoutDate ?? '';
-        statusCon.text = 'booked';
+        statusCon = record.status ?? '';
       });
     }
   }
@@ -136,9 +137,10 @@ class _AddRecordState extends State<AddRecord> {
                       reason: reasonCon.text.trim(),
                       contact: contactCon.text.trim(),
                       roomNo: selectedRoomNo ?? '',
-                      status: 'booked',
-                      checkoutDate: null,
-                      checkoutTime: null,
+                      status: statusCon ?? '',
+                      checkoutDate: checkoutDateCon.text.trim(),
+                      checkoutTime: checkoutTimeCon.text.trim(),
+                      hasCheckedOut : false,
                     );
 
                     final firestore = FirestoreService();
@@ -197,19 +199,44 @@ class _AddRecordState extends State<AddRecord> {
             hintStyle: interRegular(size: 14.sp, color: txtGrey7),
           ),
 
+          SizedBox(height: 18.h),
+
+          // Booking Status
+          CustomDropdown(
+            headingText: "Status",
+            headingTextStyle: interMedium(size: 13.sp),
+            hintText: "Select booking status",
+            hintStyle: interRegular(size: 14.sp, color: txtGrey7),
+            items:  const ["Booked", "Checked In", "Checked Out"],
+            isRequired: true,
+            value: statusCon,
+            onChanged: (value) {
+              setState(() {
+                statusCon = value;
+              });
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select status';
+              }
+              return null;
+            },
+          ),
+
           SizedBox(height: 30.h),
 
-          /// Section: Stay Details
+          /// Section: Stay / Checkin Details 
           sectionHeader("Stay Details"),
           SizedBox(height: 14.h),
 
           CustomDatepicker(
             controller: checkinDateCon,
             labelText: 'Check-in Date',
-            firstDate: DateTime(1900, 1, 1),
+            firstDate: DateTime.now(),
             onChanged: (value) {
-              setState(() {});
-            },
+              selectedCheckinDate = value;
+              recordController.getAvailableRooms(checkinDate: value);
+            }
           ),
 
           SizedBox(height: 18.h),
@@ -241,37 +268,48 @@ class _AddRecordState extends State<AddRecord> {
                   },
                   isRequired: true,
                 )),
+
           SizedBox(height: 30.h),
 
+          /// Section: Checkout Details
+          Visibility(
+            visible: checkinDateCon.text == '' ? false : true ,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                sectionHeader("Checkout Details"),
+                SizedBox(height: 14.h),
+                
+                CustomDatepicker(
+                  controller: checkoutDateCon,
+                  labelText: 'Check-out Date',
+                  firstDate: DateTime(1900, 1, 1),
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                  isRequired: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select Check-out Date';
+                    }
+                    return null;
+                  },
+                ),
+                
+                SizedBox(height: 18.h),
+                
+                CustomTimePicker(
+                  controller: checkoutTimeCon,
+                  defaultTime: const TimeOfDay(hour: 12, minute: 0),
+                  fixedToDefault: true,
+                  headingText: "Check-out Time",
 
-          // /// Section: Checkout Details
-          // Column(
-          //   crossAxisAlignment: CrossAxisAlignment.start,
-          //   children: [
-          //     sectionHeader("Checkout Details"),
-          //     SizedBox(height: 14.h),
-              
-          //     CustomDatepicker(
-          //       controller: checkoutDateCon,
-          //       labelText: 'Check-out Date',
-          //       firstDate: DateTime(1900, 1, 1),
-          //       onChanged: (value) {
-          //         setState(() {});
-          //       },
-          //     ),
-              
-          //     SizedBox(height: 18.h),
-              
-          //     CustomTimePicker(
-          //       controller: checkoutTimeCon,
-          //       defaultTime: const TimeOfDay(hour: 12, minute: 0),
-          //       fixedToDefault: true,
-          //       headingText: "Check-out Time",
-          //     ),
-          //   ],
-          // ),
+                ),
+              ],
+            ),
+          ),
 
-          // SizedBox(height: 30.h),
+          SizedBox(height: 30.h),
 
 
           /// Section: Identification

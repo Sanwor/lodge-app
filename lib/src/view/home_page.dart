@@ -175,6 +175,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ),
     );
   }
+  
   //record list
   Widget _buildRecordList() {
     if (recordController.records.isEmpty) {
@@ -196,9 +197,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             name: record.name,
             address: record.address,
             roomNo: record.roomNo,
-            isCheckedOut: record.checkoutDate != null,
+            isCheckedOut: record.hasCheckedOut ?? false,
             onTap: () {},
-            onTapCheckout: record.checkoutDate == null
+            onTapCheckout: record.hasCheckedOut == false
               ? () => Get.to(() => CheckoutPage(record: record))
               : null,
             onDelete: () => _showDeleteDialog(record),
@@ -226,62 +227,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ],
     );
   }
-
-  // //checkout
-  // void _showCheckoutDialog(GuestRecordModel record) {
-  //   final checkoutDateController =
-  //       TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
-  //   final checkoutTimeController =
-  //       TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
-
-  //   Get.defaultDialog(
-  //     title: "Checkout Guest",
-  //     content: Padding(
-  //       padding: EdgeInsets.all(16.w),
-  //       child: Column(
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             SizedBox(height: 14.h),
-              
-  //             CustomDatepicker(
-  //               controller: checkoutDateController,
-  //               labelText: 'Check-out Date',
-  //               firstDate: DateTime(1900, 1, 1),
-  //               onChanged: (value) {
-  //                 setState(() {});
-  //               },
-  //             ),
-              
-  //             SizedBox(height: 18.h),
-              
-  //             CustomTimePicker(
-  //               controller: checkoutTimeController,
-  //               defaultTime: const TimeOfDay(hour: 12, minute: 0),
-  //               fixedToDefault: true,
-  //               headingText: "Check-out Time",
-  //             ),
-  //           ],
-  //         ), ),
-  //     actions: [
-  //       TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
-  //       ElevatedButton(
-  //         onPressed: () async {
-  //           if (record.id == null) return;
-
-  //           recordController.checkoutGuest(
-  //           record.id!,
-  //           checkoutDateController.text,
-  //           checkoutTimeController.text,
-  //         );
-          
-  //         Get.back();
-  //         },
-  //         style: ElevatedButton.styleFrom(backgroundColor: orange),
-  //         child: const Text("Checkout", style: TextStyle(color: Colors.white)),
-  //       ),
-  //     ],
-  //   );
-  // }
 
   //delete
   void _showDeleteDialog(GuestRecordModel record) {

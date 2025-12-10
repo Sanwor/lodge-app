@@ -15,47 +15,101 @@ class GuestRecordController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   // GET AVAILABLE ROOMS
-  Future<void> getAvailableRooms() async {
+  Future<void> getAvailableRooms({String? checkinDate}) async {
     try {
+      // Load all rooms
       var roomsSnapshot = await FirebaseFirestore.instance
           .collection('rooms')
           .orderBy('roomNumber')
           .get();
 
-      var activeGuests = await recordsCollection
-          .where('checkoutDate', isNull: true) // only guests NOT checked out
-          .get();
+      // Load all bookings
+      var guestSnapshot = await recordsCollection.get();
 
-      // Extract occupied rooms
-      List<String> occupiedRooms = activeGuests.docs
-          .map((doc) => doc['roomNo'] as String)
-          .where((room) => room.isNotEmpty)
-          .toList();
+      DateTime? selectedCheckin = checkinDate != null && checkinDate.isNotEmpty
+          ? DateFormat('yyyy-MM-dd').parse(checkinDate)
+          : null;
 
-      // All rooms
+      List<String> occupiedRooms = [];
+
+      for (var doc in guestSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        final roomNo = (data['roomNo'] ?? "").toString();
+        if (roomNo.isEmpty) continue;
+
+        // parse guest checkin
+        DateTime guestCheckin;
+        try {
+          guestCheckin = DateFormat("yyyy-MM-dd").parse(data['checkinDate']);
+        } catch (_) {
+          continue;
+        }
+
+        // parse guest checkout (nullable)
+        DateTime? guestCheckout;
+        if (data['checkoutDate'] != null && data['checkoutDate'] != "") {
+          try {
+            guestCheckout = DateFormat("yyyy-MM-dd").parse(data['checkoutDate']);
+          } catch (_) {
+            guestCheckout = null;
+          }
+        }
+
+        bool hasCheckedOut = data['hasCheckedOut'] ?? false;
+
+        if (selectedCheckin != null) {
+          // ===== OVERLAP CONDITION =====
+          bool overlap = false;
+
+          if (guestCheckout != null) {
+            // conflict when selectedCheckin is between guestCheckin .. guestCheckout (inclusive checkout day)
+            overlap = selectedCheckin.isBefore(guestCheckout) &&
+                      (selectedCheckin.isAfter(guestCheckin) ||
+                      selectedCheckin.isAtSameMomentAs(guestCheckin));
+
+            // If same day checkout → conflict until checkout assumed time ≤ allowed after-time logic
+            if (selectedCheckin.isAtSameMomentAs(guestCheckout)) {
+              overlap = true;
+            }
+          } else {
+            // no checkout date → still living there
+            if (selectedCheckin.isAfter(guestCheckin) ||
+                selectedCheckin.isAtSameMomentAs(guestCheckin)) {
+              overlap = true;
+            }
+          }
+
+          if (overlap) {
+            occupiedRooms.add(roomNo);
+          }
+        } else {
+          // No check-in selected → block active rooms only
+          if (!hasCheckedOut) {
+            occupiedRooms.add(roomNo);
+          }
+        }
+      }
+
+      // ALL ROOMS
       List<String> allRooms = roomsSnapshot.docs
-          .map((doc) => doc['roomNumber'] as String)
-          .where((room) => room.isNotEmpty)
+          .map((d) => (d.data() as Map)['roomNumber'].toString())
+          .where((r) => r.isNotEmpty)
           .toList();
 
-      // Filter available rooms
+      // Filter available
       List<String> available = allRooms
           .where((room) => !occupiedRooms.contains(room))
           .toList()
         ..sort();
 
-      // Update observable list
-      if (available.isEmpty) {
-        availableRooms.value = ["No Rooms Available"];
-      } else {
-        availableRooms.value = available;
-      }
+      availableRooms.value =
+          available.isEmpty ? ["No Rooms Available"] : available;
     } catch (e) {
-      log("Error fetching available rooms: $e");
-      availableRooms.clear();
+      log("Error fetching rooms: $e");
+      availableRooms.value = ["Error loading rooms"];
     }
   }
-
 
   // Collection reference
   CollectionReference get recordsCollection => _firestore.collection('guest_records');
@@ -83,6 +137,7 @@ class GuestRecordController extends GetxController {
           reason: doc['reason'],
           contact: doc['contact'],
           roomNo: doc['roomNo'],
+          hasCheckedOut: doc['hasCheckedOut'] ?? false,
           checkoutDate: doc['checkoutDate'],
           checkoutTime: doc['checkoutTime'],
         );
@@ -142,6 +197,7 @@ class GuestRecordController extends GetxController {
           contact: data['contact']?.toString() ?? '',
           roomNo: data['roomNo']?.toString() ?? '',
           checkoutDate: checkoutDate,
+          hasCheckedOut: doc['hasCheckedOut'] ?? false,
           checkoutTime: data['checkoutTime']?.toString(),
           createdAt: data['createdAt'] != null 
               ? (data['createdAt'] as Timestamp).toDate()

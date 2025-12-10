@@ -8,7 +8,10 @@ class CustomDatepicker extends StatefulWidget {
   final String labelText;
   final DateTime firstDate;
   final DateTime lastDate;
+  final String? reqText;
   final ValueChanged<String>? onChanged;
+  final bool? isRequired;
+  final FormFieldValidator<String>? validator;
 
   CustomDatepicker({
     super.key,
@@ -17,6 +20,9 @@ class CustomDatepicker extends StatefulWidget {
     DateTime? firstDate,
     DateTime? lastDate,
     this.onChanged,
+    this.isRequired,
+    this.reqText,
+    this.validator,
   })  : firstDate = firstDate ?? DateTime(1900),
         lastDate = lastDate ?? DateTime(2100);
 
@@ -58,10 +64,35 @@ class _CustomDatepickerState extends State<CustomDatepicker> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-            child: Text(
-              widget.labelText,
-              style: interRegular(size: 12.sp, color: txtGrey7))),
+        Row(
+          children: [
+            SizedBox(
+              child: Text(
+                widget.labelText,
+                style: interRegular(size: 12.sp, color: txtGrey7)
+              )
+            ),
+
+            SizedBox(width: 8.w),
+
+            // Required badge
+            if (widget.isRequired == true)
+              Container(
+                height: 20.h,
+                padding: EdgeInsets.symmetric(horizontal: 5.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xffC13939),
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Center(
+                  child: Text(
+                    widget.reqText ?? "Required",
+                    style: interRegular(size: 12.sp, color: white),
+                  ),
+                ),
+              ),
+          ],
+        ),
 
         SizedBox(height: 8.0.h),
 
@@ -69,6 +100,7 @@ class _CustomDatepickerState extends State<CustomDatepicker> {
           controller: widget.controller,
           readOnly: true,
           style: TextStyle(color: black),
+          validator: widget.validator,
           decoration: InputDecoration(
             suffixIcon: const Icon(Icons.calendar_today, color: Color(0xff808084),),
             border: OutlineInputBorder(
