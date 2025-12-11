@@ -103,8 +103,7 @@ class GuestRecordController extends GetxController {
           .toList()
         ..sort();
 
-      availableRooms.value =
-          available.isEmpty ? ["No Rooms Available"] : available;
+      availableRooms.value = available.isEmpty ? ["No Rooms Available"] : available;
     } catch (e) {
       log("Error fetching rooms: $e");
       availableRooms.value = ["Error loading rooms"];
@@ -137,6 +136,7 @@ class GuestRecordController extends GetxController {
           reason: doc['reason'],
           contact: doc['contact'],
           roomNo: doc['roomNo'],
+          status: doc['status'],
           hasCheckedOut: doc['hasCheckedOut'] ?? false,
           checkoutDate: doc['checkoutDate'],
           checkoutTime: doc['checkoutTime'],
@@ -196,6 +196,7 @@ class GuestRecordController extends GetxController {
           reason: data['reason']?.toString() ?? '',
           contact: data['contact']?.toString() ?? '',
           roomNo: data['roomNo']?.toString() ?? '',
+          status: data['status']?.toString(),
           checkoutDate: checkoutDate,
           hasCheckedOut: doc['hasCheckedOut'] ?? false,
           checkoutTime: data['checkoutTime']?.toString(),
@@ -276,6 +277,7 @@ Future<void> getActiveRecords() async {
         reason: doc['reason'],
         contact: doc['contact'],
         roomNo: doc['roomNo'],
+        status: doc['status'],
         checkoutDate: doc['checkoutDate'],
         checkoutTime: doc['checkoutTime'],
         createdAt: doc['createdAt'] != null
@@ -449,7 +451,8 @@ Future<void> getActiveRecords() async {
       await recordsCollection.doc(guestId).update({
         'checkoutDate': checkoutDate,
         'checkoutTime': checkoutTime,
-        'hasCheckedOut': true, // Add this field
+        'hasCheckedOut': true,
+        'status': "Checked Out",
         'updatedAt': DateTime.now(),
       });
       
@@ -463,6 +466,26 @@ Future<void> getActiveRecords() async {
     }
   }
 
+  /// UPDATE RECORD STATUS
+  Future<bool> updateRecordStatus(String id, String newStatus) async {
+    try {
+      if (id.isEmpty) return false;
+      
+      await recordsCollection.doc(id).update({
+        'status': newStatus,
+        'updatedAt': DateTime.now(),
+      });
+      
+      // Refresh data
+      await getAllRecords();
+      
+      return true;
+    } catch (e) {
+      log("Error updating status: $e");
+      showErrorToast("Failed to update status");
+      return false;
+    }
+  }
 
   /// SEARCH RECORDS
   Future<void> searchRecords(String query) async {

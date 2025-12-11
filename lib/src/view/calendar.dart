@@ -224,8 +224,23 @@ class _CalendarState extends State<Calendar> {
 
   /// EVENT CARD
   Widget eventCard(GuestRecordModel record) {
-    final isCheckedOut = record.checkoutDate != null && record.checkoutDate!.isNotEmpty;
-    
+     // Get status - ensure it's not null
+       String statusText = record.status?.isNotEmpty == true 
+      ? record.status!
+      : 'Active';
+      // Determine background color based on status
+      Color statusColor;
+      
+      if (statusText.toLowerCase().contains('checked out')) {
+        statusColor = grey1;
+      } else if (statusText.toLowerCase().contains('booked')) {
+        statusColor = txtBlue;
+      } else if (statusText.toLowerCase().contains('checked in')) {
+        statusColor = green2;
+      } else {
+        statusColor = green2; // Default for active/currently staying
+      }
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(16.w),
@@ -253,17 +268,19 @@ class _CalendarState extends State<Calendar> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+
+              //status
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: isCheckedOut ? grey :  green,
+                  color: statusColor,
                   borderRadius: BorderRadius.circular(6.r),
                 ),
                 child: Text(
-                  isCheckedOut ? "Checked Out" : "Active",
+                  statusText, // Display the actual status text from database
                   style: interMedium(
                     size: 12.sp,
-                    color: txtBlack,
+                    color: white,
                   ),
                 ),
               ),
@@ -296,7 +313,7 @@ class _CalendarState extends State<Calendar> {
                 Icon(Icons.logout, size: 14.w, color: orange),
                 SizedBox(width: 4.w),
                 Text(
-                  "Checked out: ${record.checkoutDate} ${record.checkoutTime ?? ''}",
+                  "Check out at: ${record.checkoutDate} ${record.checkoutTime ?? ''}",
                   style: interRegular(size: 13.sp, color: orange),
                 ),
               ],

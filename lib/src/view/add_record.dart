@@ -207,7 +207,7 @@ class _AddRecordState extends State<AddRecord> {
             headingTextStyle: interMedium(size: 13.sp),
             hintText: "Select booking status",
             hintStyle: interRegular(size: 14.sp, color: txtGrey7),
-            items:  const ["Booked", "Checked In", "Checked Out"],
+            items:  const ["Booked", "Checked In"],
             isRequired: true,
             value: statusCon,
             onChanged: (value) {
@@ -273,7 +273,7 @@ class _AddRecordState extends State<AddRecord> {
 
           /// Section: Checkout Details
           Visibility(
-            visible: checkinDateCon.text == '' ? false : true ,
+            visible: checkinDateCon.text.isNotEmpty,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -283,11 +283,13 @@ class _AddRecordState extends State<AddRecord> {
                 CustomDatepicker(
                   controller: checkoutDateCon,
                   labelText: 'Check-out Date',
-                  firstDate: DateTime(1900, 1, 1),
+                  firstDate: checkinDateCon.text.isNotEmpty 
+                    ? DateTime.parse(checkinDateCon.text) 
+                    : DateTime.now(),
                   onChanged: (value) {
                     setState(() {});
                   },
-                  isRequired: true,
+                  isRequired: false,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please select Check-out Date';

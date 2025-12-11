@@ -4,6 +4,7 @@ import 'package:family_home/src/models/guest_record_model.dart';
 import 'package:family_home/src/view/add_record.dart';
 import 'package:family_home/src/view/checkout_page.dart';
 import 'package:family_home/src/widget/custom_menubar.dart';
+import 'package:family_home/src/widget/custom_toast.dart';
 import 'package:family_home/src/widget/record_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -197,8 +198,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             name: record.name,
             address: record.address,
             roomNo: record.roomNo,
+            status: record.status ?? 'Active',
             isCheckedOut: record.hasCheckedOut ?? false,
             onTap: () {},
+            onTapCheckIn: record.status?.toLowerCase() == 'booked'
+              ? () => _handleCheckIn(record)
+              : null,
             onTapCheckout: record.hasCheckedOut == false
               ? () => Get.to(() => CheckoutPage(record: record))
               : null,
@@ -243,6 +248,37 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
         bool success = await recordController.deleteRecord(record.id!);
         if (success) Get.back();
+      },
+    );
+  }
+
+  //checkin
+  void _handleCheckIn(GuestRecordModel record) async {
+    if (record.id == null) return;
+    
+    Get.defaultDialog(
+      title: "Check In Guest",
+      middleText: "Check in ${record.name} to room ${record.roomNo}?",
+      textConfirm: "Check In",
+      textCancel: "Cancel",
+      confirmTextColor: Colors.white,
+      buttonColor: Colors.green,
+      cancelTextColor: txtBlack,
+      onConfirm: () async {
+        // Show loading
+        Get.back();
+        
+        // Update status to "Checked In"
+        bool success = await recordController.updateRecordStatus(
+          record.id!, 
+          'Checked In'
+        );
+        
+        if (success) {
+          showToast("${record.name} checked in successfully");
+          // Refresh data
+          await _refreshData();
+        }
       },
     );
   }

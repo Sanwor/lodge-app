@@ -1,7 +1,7 @@
 import 'package:family_home/src/app_config/app_styles.dart';
-import 'package:family_home/src/app_utils/read_write.dart';
 import 'package:family_home/src/view/home_page.dart';
 import 'package:family_home/src/view/login_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -34,9 +34,9 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 2), () {
-      final token = read('token');
-      Get.offAll(() => token != '' ? const HomePage() : LoginPage());
+    Future.delayed(const Duration(seconds: 2), () async{
+      var isLoggedIn = FirebaseAuth.instance.currentUser;
+      Get.offAll(() => isLoggedIn != null  ? const HomePage() : LoginPage());
     });
   }
 
@@ -49,7 +49,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: white,   // Minimal clean look
+      backgroundColor: black,
       body: FadeTransition(
         opacity: _fade,
         child: Center(
@@ -59,7 +59,7 @@ class _SplashScreenState extends State<SplashScreen>
               Icon(
                 Icons.home_outlined,
                 size: 80.sp,
-                color: Colors.black87,
+                color: white,
               ),
 
               SizedBox(height: 12.h),
@@ -69,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
                 style: interSemiBold(
                   size: 20.sp,
                   charSpacing: 0.8,
-                  color: Colors.black87,
+                  color: white,
                 ),
               ),
             ],

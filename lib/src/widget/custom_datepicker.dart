@@ -145,7 +145,6 @@ class _CustomDatepickerState extends State<CustomDatepicker> {
             errorStyle: TextStyle(fontSize: 11.5.sp, color: Colors.red),
           ),
           onTap: _pickDate,
-          // Remove onChanged since it won't work with readOnly
         ),
       ],
     );

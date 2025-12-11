@@ -6,10 +6,12 @@ class RecordContainer extends StatelessWidget {
   final String date;
   final String name;
   final String address;
+  final String status;
   final String roomNo;
   final bool? isCheckedOut;
   final VoidCallback onTap;
   final VoidCallback? onTapCheckout;
+  final VoidCallback? onTapCheckIn;
   final VoidCallback? onDelete;
   
   const RecordContainer({
@@ -17,10 +19,12 @@ class RecordContainer extends StatelessWidget {
     required this.date,
     required this.name,
     required this.address,
+    required this.status,
     required this.roomNo,
     this.isCheckedOut,
     required this.onTap,
     this.onTapCheckout,
+    this.onTapCheckIn,
     this.onDelete,
   });
   
@@ -65,18 +69,19 @@ class RecordContainer extends StatelessWidget {
                       Text(
                         name,
                         style: interSemiBold(size: 16.sp, color: txtBlack),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                         decoration: BoxDecoration(
-                          color: isCheckedOut == true ? Colors.grey.shade200 : Colors.green.shade50,
+                          color: _getStatusColor(status), // Use status-based color
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                         child: Text(
-                          isCheckedOut == true ? "Checked Out" : "Active",
+                          status, // Show actual status from database
                           style: interMedium(
                             size: 12.sp,
-                            color: isCheckedOut == true ? Colors.grey : Colors.green,
+                            color: Colors.white, // White text for better contrast
                           ),
                         ),
                       ),
@@ -110,11 +115,30 @@ class RecordContainer extends StatelessWidget {
             ),
             
             // Action buttons
-            if (onTapCheckout != null || onDelete != null)
-              PopupMenuButton(
-                icon: Icon(Icons.more_vert, color: txtGrey2),
-                itemBuilder: (context) => [
-                  if (onTapCheckout != null)
+            PopupMenuButton(
+              icon: Icon(Icons.more_vert, color: txtGrey2),
+              itemBuilder: (context) {
+                List<PopupMenuItem> items = [];
+                
+                // Show Check-in button only if status is "Booked"
+                if (status.toLowerCase() == 'booked' && onTapCheckIn != null) {
+                  items.add(
+                    PopupMenuItem(
+                      onTap: onTapCheckIn,
+                      child: Row(
+                        children: [
+                          Icon(Icons.login, color: Colors.green),
+                          SizedBox(width: 8.w),
+                          Text("Check In"),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                
+                // Show Checkout button (existing logic)
+                if (onTapCheckout != null) {
+                  items.add(
                     PopupMenuItem(
                       onTap: onTapCheckout,
                       child: Row(
@@ -125,22 +149,45 @@ class RecordContainer extends StatelessWidget {
                         ],
                       ),
                     ),
-                  if (onDelete != null)
+                  );
+                }
+                
+                // Show Delete button (existing logic)
+                if (onDelete != null) {
+                  items.add(
                     PopupMenuItem(
                       onTap: onDelete,
                       child: Row(
                         children: [
-                          Icon(Icons.delete, color: Colors.red),
+                          Icon(Icons.delete, color: red),
                           SizedBox(width: 8.w),
                           Text("Delete"),
                         ],
                       ),
                     ),
-                ],
-              ),
+                  );
+                }
+                
+                return items;
+              },
+            ),
           ],
         ),
       ),
     );
+  }
+
+}
+// Helper method for status colors
+Color _getStatusColor(String status) {
+  switch (status.toLowerCase()) {
+    case 'booked':
+      return Colors.blue;
+    case 'checked in':
+      return Colors.green;
+    case 'checked out':
+      return Colors.grey;
+    default:
+      return Colors.blueGrey;
   }
 }
