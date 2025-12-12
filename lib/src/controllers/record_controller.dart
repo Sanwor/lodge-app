@@ -13,10 +13,13 @@ class GuestRecordController extends GetxController {
   RxList<GuestRecordModel> records = <GuestRecordModel>[].obs;
   RxList<String> availableRooms = <String>[].obs;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  RxBool isAvailableRoomLoading = false.obs;
   
   // GET AVAILABLE ROOMS
   Future<void> getAvailableRooms({String? checkinDate}) async {
     try {
+      isAvailableRoomLoading(true);
+
       // Load all rooms
       var roomsSnapshot = await FirebaseFirestore.instance
           .collection('rooms')
@@ -107,6 +110,9 @@ class GuestRecordController extends GetxController {
     } catch (e) {
       log("Error fetching rooms: $e");
       availableRooms.value = ["Error loading rooms"];
+    }
+    finally{
+      isAvailableRoomLoading(false);
     }
   }
 

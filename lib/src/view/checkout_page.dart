@@ -1,6 +1,7 @@
 import 'package:family_home/src/controllers/record_controller.dart';
 import 'package:family_home/src/view/bill_receipt_page.dart';
 import 'package:family_home/src/widget/custom_toast.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -33,8 +34,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final checkoutTimeController = TextEditingController();
   
   RoomModel? currentRoom;
-  List<MenuItemModel> selectedMenuItems = [];
-  Map<String, int> itemQuantities = {}; // itemId -> quantity
+  RxList<MenuItemModel> selectedMenuItems = <MenuItemModel>[].obs;
+  final itemQuantities = <String, int>{}.obs;
   
   double roomPrice = 0.0;
   bool isLoading = false;
@@ -89,7 +90,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       
       appBar: _appBar(),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+        padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 200.w : 20.w, vertical: 16.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -106,11 +107,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
             SizedBox(height: 24.h),
             
             // Food & Beverages
-            foodSection(),
+            Obx(() => foodSection()),
             SizedBox(height: 24.h),
             
             // Bill Summary
-            billSummary(),
+            Obx(() => billSummary()),
             SizedBox(height: 32.h),
             
             // Action Buttons
@@ -376,105 +377,111 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
           
           // Selected Items List
-          if (selectedMenuItems.isNotEmpty) ...[
-            SizedBox(height: 16.h),
-            ...selectedMenuItems.map((item) {
-              final quantity = itemQuantities[item.id!] ?? 1;
-              return Container(
-                margin: EdgeInsets.only(bottom: 12.h),
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.name,
-                            style: interMedium(size: 14.sp, color: txtBlack),
-                          ),
-                          SizedBox(height: 4.h),
-                          Row(
+          Obx(() {
+          return Column(
+            children: [
+              if (selectedMenuItems.isNotEmpty) ...[
+                SizedBox(height: 16.h),
+                ...selectedMenuItems.map((item) {
+                  final quantity = itemQuantities[item.id!] ?? 1;
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 12.h),
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Rs. ${item.price.toStringAsFixed(2)}",
-                                style: interRegular(size: 12.sp, color: txtGrey2),
+                                item.name,
+                                style: interMedium(size: 14.sp, color: txtBlack),
                               ),
-                              SizedBox(width: 12.w),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                                decoration: BoxDecoration(
-                                  color: orange.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(4.r),
-                                ),
-                                child: Text(
-                                  "Qty: $quantity",
-                                  style: interMedium(size: 11.sp, color: orange),
-                                ),
+                              SizedBox(height: 4.h),
+                              Row(
+                                children: [
+                                  Text(
+                                    "Rs. ${item.price.toStringAsFixed(2)}",
+                                    style: interRegular(size: 12.sp, color: txtGrey2),
+                                  ),
+                                  SizedBox(width: 12.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                    decoration: BoxDecoration(
+                                      color: orange.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4.r),
+                                    ),
+                                    child: Text(
+                                      "Qty: $quantity",
+                                      style: interMedium(size: 11.sp, color: orange),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                        Text(
+                          "Rs. ${(item.price * quantity).toStringAsFixed(2)}",
+                          style: interMedium(size: 14.sp, color: txtBlack),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ] else ...[
+                SizedBox(height: 16.h),
+                Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 24.h,horizontal: 20.w),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.restaurant_menu, size: 40.w, color: txtGrey2),
+                        SizedBox(height: 12.h),
+                        Text(
+                          "No food items added",
+                          style: interRegular(size: 14.sp, color: txtGrey2),
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          "Tap 'Add Items' to add food charges",
+                          style: interRegular(size: 12.sp, color: txtGrey2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              
+              if (selectedMenuItems.isNotEmpty) ...[
+                SizedBox(height: 16.h),
+                Divider(color: Colors.grey.shade300),
+                SizedBox(height: 8.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Food Total",
+                      style: interMedium(size: 14.sp, color: txtBlack),
                     ),
                     Text(
-                      "Rs. ${(item.price * quantity).toStringAsFixed(2)}",
+                      "Rs. ${getFoodTotal().toStringAsFixed(2)}",
                       style: interMedium(size: 14.sp, color: txtBlack),
                     ),
                   ],
                 ),
-              );
-            }),
-          ] else ...[
-            SizedBox(height: 16.h),
-            Center(
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 24.h,horizontal: 20.w),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Column(
-                  children: [
-                    Icon(Icons.restaurant_menu, size: 40.w, color: txtGrey2),
-                    SizedBox(height: 12.h),
-                    Text(
-                      "No food items added",
-                      style: interRegular(size: 14.sp, color: txtGrey2),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      "Tap 'Add Items' to add food charges",
-                      style: interRegular(size: 12.sp, color: txtGrey2),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          
-          if (selectedMenuItems.isNotEmpty) ...[
-            SizedBox(height: 16.h),
-            Divider(color: Colors.grey.shade300),
-            SizedBox(height: 8.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Food Total",
-                  style: interMedium(size: 14.sp, color: txtBlack),
-                ),
-                Text(
-                  "Rs. ${getFoodTotal().toStringAsFixed(2)}",
-                  style: interMedium(size: 14.sp, color: txtBlack),
-                ),
               ],
-            ),
-          ],
+            ],
+          );
+          })
         ],
       ),
     );
@@ -543,30 +550,34 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   // Action Buttons
   actionButtons() {
-    return Column(
-      children: [
-        if (isLoading)
-          Center(
-            child: CircularProgressIndicator(color: orange),
-          )
-        else ...[
-          CustomButton(
-            text: "Generate Bill & Checkout",
-            color: orange,
-            onTap: _processCheckout,
-            height: 50.h,
-            width: double.infinity,
-          ),
-          SizedBox(height: 12.h),
-          CustomButton(
-            text: "Cancel",
-            color: Colors.grey.shade400,
-            onTap: () => Get.back(),
-            height: 50.h,
-            width: double.infinity,
-          ),
+    return Center(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (isLoading)
+            Center(
+              child: CircularProgressIndicator(color: orange),
+            )
+          else ...[
+            CustomButton(
+              text: "Generate Bill & Checkout",
+              color: orange,
+              onTap: _processCheckout,
+              height: kIsWeb ? 64.h : 50.h,
+              width: kIsWeb ? 600.w: double.infinity,
+            ),
+            SizedBox(height: 12.h),
+            CustomButton(
+              text: "Cancel",
+              color: Colors.grey.shade400,
+              onTap: () => Get.back(),
+              height: kIsWeb ? 64.h : 50.h,
+              width: kIsWeb ? 600.w : double.infinity,
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -623,92 +634,103 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   itemBuilder: (context, index) {
                     final item = menuController.menuItems[index];
                     final isSelected = selectedMenuItems.any((selected) => selected.id == item.id);
-                    final quantity = itemQuantities[item.id!] ?? 0;
                     
-                    return Container(
-                      margin: EdgeInsets.only(bottom: 12.h),
-                      padding: EdgeInsets.all(16.w),
-                      decoration: BoxDecoration(
-                        color: isSelected ? orange.withValues(alpha: 0.1) : Colors.white,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(
-                          color: isSelected ? orange : Colors.grey.shade200,
-                          width: isSelected ? 1.5 : 1,
+                    // Use Obx for each item's quantity to trigger rebuild
+                    return Obx(() {
+                      final quantity = itemQuantities[item.id!] ?? 0;
+                      
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 12.h),
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: isSelected ? orange.withValues(alpha: 0.1) : Colors.white,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color: isSelected ? orange : Colors.grey.shade200,
+                            width: isSelected ? 1.5 : 1,
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.name,
+                                    style: interMedium(size: 14.sp, color: txtBlack),
+                                  ),
+                                  SizedBox(height: 4.h),
+                                  Text(
+                                    item.description,
+                                    style: interRegular(size: 12.sp, color: txtGrey2),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: 8.h),
+                                  Text(
+                                    "Rs. ${item.price.toStringAsFixed(2)}",
+                                    style: interMedium(size: 14.sp, color: orange),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            
+                            Row(
                               children: [
-                                Text(
-                                  item.name,
-                                  style: interMedium(size: 14.sp, color: txtBlack),
+                                // Minus button
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.remove_circle,
+                                    color: quantity > 0 ? Colors.red : Colors.grey.shade400,
+                                    size: 24.w,
+                                  ),
+                                  onPressed: () {
+                                    if (quantity > 1) {
+                                      itemQuantities[item.id!] = quantity - 1;
+                                      itemQuantities.refresh(); // Trigger rebuild
+                                    } else if (quantity == 1) {
+                                      selectedMenuItems.removeWhere((selected) => selected.id == item.id);
+                                      itemQuantities.remove(item.id!);
+                                      selectedMenuItems.refresh(); // Trigger rebuild
+                                      itemQuantities.refresh(); // Trigger rebuild
+                                    }
+                                  },
                                 ),
-                                SizedBox(height: 4.h),
-                                Text(
-                                  item.description,
-                                  style: interRegular(size: 12.sp, color: txtGrey2),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+
+                                // Quantity display
+                                Container(
+                                  width: 30.w,
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    quantity.toString(),
+                                    style: interMedium(size: 16.sp),
+                                  ),
                                 ),
-                                SizedBox(height: 8.h),
-                                Text(
-                                  "Rs. ${item.price.toStringAsFixed(2)}",
-                                  style: interMedium(size: 14.sp, color: orange),
+
+                                // Add button
+                                IconButton(
+                                  icon: Icon(Icons.add_circle, color: Colors.green, size: 24.w),
+                                  onPressed: () {
+                                    if (!selectedMenuItems.any((selected) => selected.id == item.id)) {
+                                      selectedMenuItems.add(item);
+                                    }
+                                    itemQuantities[item.id!] = quantity + 1;
+                                    itemQuantities.refresh(); // Trigger rebuild
+                                    selectedMenuItems.refresh(); // Trigger rebuild
+                                  },
                                 ),
                               ],
-                            ),
-                          ),
-                          
-                          if (isSelected) ...[
-                            IconButton(
-                              icon: Icon(Icons.remove_circle, color: Colors.red, size: 24.w),
-                              onPressed: () {
-                                if (quantity > 1) {
-                                  setState(() {
-                                    itemQuantities[item.id!] = quantity - 1;
-                                  });
-                                } else {
-                                  setState(() {
-                                    selectedMenuItems.removeWhere((selected) => selected.id == item.id);
-                                    itemQuantities.remove(item.id!);
-                                  });
-                                }
-                              },
-                            ),
-                            Text(
-                              quantity.toString(),
-                              style: interMedium(size: 16.sp),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.add_circle, color: Colors.green, size: 24.w),
-                              onPressed: () {
-                                setState(() {
-                                  itemQuantities[item.id!] = quantity + 1;
-                                });
-                              },
-                            ),
-                          ] else ...[
-                            IconButton(
-                              icon: Icon(Icons.add_circle, color: orange, size: 24.w),
-                              onPressed: () {
-                                setState(() {
-                                  selectedMenuItems.add(item);
-                                  itemQuantities[item.id!] = 1;
-                                });
-                              },
-                            ),
+                            )
                           ],
-                        ],
-                      ),
-                    );
+                        ),
+                      );
+                    });
                   },
                 );
               }),
             ),
-            
+
             // Done Button
             Padding(
               padding: EdgeInsets.all(20.w),

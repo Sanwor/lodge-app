@@ -4,6 +4,7 @@ import 'package:family_home/src/view/home_page.dart';
 import 'package:family_home/src/widget/custom_button.dart';
 import 'package:family_home/src/widget/custom_textformfield.dart';
 import 'package:family_home/src/widget/custom_toast.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -110,65 +111,65 @@ class _LoginPageState extends State<LoginPage> {
   loginCreds(){
     return Form(
       key: _formKey,
-      child: Column(
-        children: [
-
-          CustomTextFormField(
-            controller: _emailController,
-            headingText: "Email",
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              if (!value.contains('@')) {
-                return 'Please enter a valid email';
-              }
-              return null;
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          CustomTextFormField(
-            controller: _passwordController,
-            headingText: "Password",
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your password';
-              }
-              if (value.length < 6) {
-                return 'Password must be at least 6 characters';
-              }
-              return null;
-            },
-          ),
-        ],
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 400.w : 20.w),
+        child: Column(
+          children: [
+            CustomTextFormField(
+              controller: _emailController,
+              headingText: "Email",
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your email';
+                }
+                if (!value.contains('@')) {
+                  return 'Please enter a valid email';
+                }
+                return null;
+              },
+            ),
+        
+            const SizedBox(height: 20),
+        
+            CustomTextFormField(
+              controller: _passwordController,
+              headingText: "Password",
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your password';
+                }
+                if (value.length < 6) {
+                  return 'Password must be at least 6 characters';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  loginButton(){
-  return SizedBox(
-    width: double.infinity,
-    height: 50.h,
-    child: isLoginLoading.isTrue
-        ? const Center(
-            child: SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: darkBlue,
-              ),
-            ),
-          )
-        : CustomButton(
-            color: darkBlue, 
-            text: "Login", 
-            onTap: _login,
-            height: 50.h, 
-            width: 300.w,
+  loginButton() {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: kIsWeb ? 400.w : 20.w, 
+      ),
+      child: Obx(() { // Use Obx to make it reactive
+        return SizedBox(
+          width: double.infinity,
+          child: CustomButton(
+            color: darkBlue,
+            text: "Login",
+            onTap: isLoginLoading.isTrue
+              ? null 
+              : () => _login(), 
+            height: kIsWeb ? 56.h : 50.h,
+            width: double.infinity, 
+            isLoading: isLoginLoading.isTrue,
           ),
+        );
+      }),
     );
   }
 

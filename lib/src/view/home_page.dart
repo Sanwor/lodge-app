@@ -6,6 +6,7 @@ import 'package:family_home/src/view/checkout_page.dart';
 import 'package:family_home/src/widget/custom_menubar.dart';
 import 'package:family_home/src/widget/custom_toast.dart';
 import 'package:family_home/src/widget/record_container.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -58,7 +59,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return Scaffold(
       backgroundColor: const Color(0xffF6F6F6),
 
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: kIsWeb 
+      ? _buildWebFloatingActionButton()
+      : FloatingActionButton(
         backgroundColor: orange,
         child: const Icon(Icons.add, color: Colors.white),
         onPressed: () => Get.to(() => const AddRecord()),
@@ -280,6 +283,19 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           await _refreshData();
         }
       },
+    );
+  }
+
+  // Different FAB for web
+  Widget _buildWebFloatingActionButton() {
+    return Positioned(
+      bottom: 40.h,
+      right: 40.w,
+      child: FloatingActionButton(
+        backgroundColor: orange,
+        child: const Icon(Icons.add, color: Colors.white),
+        onPressed: () => Get.to(() => const AddRecord()),
+      ),
     );
   }
 }

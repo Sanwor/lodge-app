@@ -1,4 +1,5 @@
 import 'package:family_home/src/app_config/app_styles.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -30,33 +31,34 @@ class RecordContainer extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
+    final bool isWeb = kIsWeb;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(isWeb ? 16.r : 12.r),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
+              blurRadius: isWeb ? 12 : 8,
               offset: Offset(0, 2),
             ),
           ],
         ),
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.all(isWeb ? 24.w : 16.w),
         child: Row(
           children: [
             // Status indicator
             Container(
-              width: 8.w,
-              height: 50.h,
+              width: isWeb ? 12.w : 8.w,
+              height: isWeb ? 60.h : 50.h,
               decoration: BoxDecoration(
                 color: isCheckedOut == true ? Colors.grey : Colors.green,
                 borderRadius: BorderRadius.circular(4.r),
               ),
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: isWeb ? 20.w : 12.w),
             
             // Main content
             Expanded(
@@ -68,11 +70,15 @@ class RecordContainer extends StatelessWidget {
                     children: [
                       Text(
                         name,
-                        style: interSemiBold(size: 16.sp, color: txtBlack),
+                        style: interSemiBold(size: isWeb ? 18.sp : 16.sp, color: txtBlack),
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (!isWeb)
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isWeb ? 12.w : 8.w, 
+                          vertical: isWeb ? 6.h : 4.h
+                        ),
                         decoration: BoxDecoration(
                           color: _getStatusColor(status), // Use status-based color
                           borderRadius: BorderRadius.circular(4.r),
@@ -80,33 +86,33 @@ class RecordContainer extends StatelessWidget {
                         child: Text(
                           status, // Show actual status from database
                           style: interMedium(
-                            size: 12.sp,
+                            size: isWeb ? 14.sp : 12.sp,
                             color: Colors.white, // White text for better contrast
                           ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: isWeb ? 8.h : 4.h),
                   Text(
                     address,
-                    style: interRegular(size: 14.sp, color: txtGrey2),
+                    style: interRegular(size: isWeb ? 16.sp : 14.sp, color: txtGrey2),
                   ),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: isWeb ? 8.h : 4.h),
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 14.sp, color: orange),
+                      Icon(Icons.calendar_today, size: isWeb ? 16.sp : 14.sp, color: orange),
                       SizedBox(width: 4.w),
                       Text(
                         date,
-                        style: interRegular(size: 13.sp, color: txtGrey2),
+                        style: interRegular(size: isWeb ? 15.sp : 13.sp, color: txtGrey2),
                       ),
-                      SizedBox(width: 16.w),
-                      Icon(Icons.meeting_room, size: 14.sp, color: txtBlue),
+                      SizedBox(width: isWeb ? 24.w : 16.w),
+                      Icon(Icons.meeting_room, size: isWeb ? 16.sp : 14.sp, color: txtBlue),
                       SizedBox(width: 4.w),
                       Text(
                         "Room $roomNo",
-                        style: interRegular(size: 13.sp, color: txtGrey2),
+                        style: interRegular(size: isWeb ? 15.sp : 13.sp, color: txtGrey2),
                       ),
                     ],
                   ),

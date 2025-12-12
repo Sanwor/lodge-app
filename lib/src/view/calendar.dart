@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:family_home/src/app_config/app_styles.dart';
 import 'package:family_home/src/controllers/record_controller.dart';
 import 'package:family_home/src/models/guest_record_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -19,14 +22,29 @@ class _CalendarState extends State<Calendar> {
   DateTime? _selectedDay;
   final recordController = Get.find<GuestRecordController>();
   List<GuestRecordModel> _selectedEvents = [];
+  RxBool isLoading = false.obs;
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateSelectedEvents(_focusedDay);
-    });
+    initialize();
+  }
+
+  initialize() async {
+    try {
+      isLoading.value = true;
+      if (recordController.records.isEmpty) {
+        await recordController.getAllRecords();
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateSelectedEvents(_focusedDay);
+      });
+    } catch (e) {
+      log("Error loading calendar data: $e");
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void _updateSelectedEvents(DateTime day) {
@@ -54,16 +72,31 @@ class _CalendarState extends State<Calendar> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: white,
-      appBar: _appBar(),
-      body: Column(
-        children: [
-          calendar(),
-          SizedBox(height: 16.h),
-          eventsList(),
-        ],
-      ),
+  return Scaffold(
+    backgroundColor: white,
+    appBar: _appBar(),
+    body: Obx(() {
+      if (isLoading.isTrue) {
+        return Center(
+          child: CircularProgressIndicator(color: orange),
+        );
+      }
+      
+      return kIsWeb 
+        ? Row(
+            children: [
+              Expanded(flex: 1, child: calendar()),
+              Expanded(flex: 2, child: eventsList()),
+            ],
+          )
+        : Column(
+            children: [
+              calendar(),
+              SizedBox(height: 16.h),
+              Expanded(child: eventsList()),
+            ],
+          );
+      }),
     );
   }
 
@@ -84,10 +117,11 @@ class _CalendarState extends State<Calendar> {
   ///CALENDAR
   Widget calendar() {
     return Container(
-      margin: EdgeInsets.all(12.w),
+      margin: EdgeInsets.all(kIsWeb ? 20.w : 12.w),
+      padding: kIsWeb ? EdgeInsets.all(20.w) : EdgeInsets.zero,
       decoration: BoxDecoration(
         color: orange.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(kIsWeb ? 16.r : 12.r),
       ),
       child: TableCalendar(
         firstDay: DateTime.now().subtract(const Duration(days: 365)),
@@ -132,6 +166,8 @@ class _CalendarState extends State<Calendar> {
             return null;
           },
         ),
+
+        
         
         selectedDayPredicate: (day) {
           return isSameDay(_selectedDay, day);
@@ -163,6 +199,21 @@ class _CalendarState extends State<Calendar> {
           selectedDecoration: BoxDecoration(
             color: orange,
             shape: BoxShape.circle,
+          ),
+          cellPadding: kIsWeb 
+            ? EdgeInsets.symmetric(vertical: 12.h, horizontal: 4.w)
+            : EdgeInsets.zero,
+          defaultTextStyle: TextStyle(
+            fontSize: kIsWeb ? 16.sp : 14.sp,
+          ),
+          todayTextStyle: TextStyle(
+            fontSize: kIsWeb ? 16.sp : 14.sp,
+            fontWeight: FontWeight.bold,
+          ),
+          selectedTextStyle: TextStyle(
+            fontSize: kIsWeb ? 16.sp : 14.sp,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),

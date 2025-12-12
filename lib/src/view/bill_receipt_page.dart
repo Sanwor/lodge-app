@@ -1,4 +1,5 @@
 import 'package:family_home/src/widget/custom_toast.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -23,7 +24,9 @@ class _BillReceiptPageState extends State<BillReceiptPage> {
       backgroundColor: Colors.white,
       appBar: _appBar(),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.symmetric(
+          horizontal: kIsWeb ? 200.w : 20.w, // Increase horizontal padding to make dialog narrower
+        ),
         child: Column(
           children: [
             // Receipt Header
@@ -105,8 +108,8 @@ class _BillReceiptPageState extends State<BillReceiptPage> {
                   text: "Back to Home",
                   color: orange,
                   onTap: () => Get.until((route) => route.isFirst),
-                  height: 50.h,
-                  width: double.infinity,
+                  height: kIsWeb ? 64.h : 50.h,
+                  width: kIsWeb ? 600.w : double.infinity,
                 ),
                 SizedBox(height: 12.h),
               ],

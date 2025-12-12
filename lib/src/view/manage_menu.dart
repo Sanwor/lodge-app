@@ -3,6 +3,7 @@ import 'package:family_home/src/controllers/menu_controller.dart';
 import 'package:family_home/src/models/menu_model.dart';
 import 'package:family_home/src/widget/custom_button.dart';
 import 'package:family_home/src/widget/custom_textformfield.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -32,7 +33,7 @@ class _ManageMenuState extends State<ManageMenu> {
         child: Icon(Icons.add, color: white, size: 24.w),
         onPressed: () => _showAddDialog(),
       ),
-      body: menuList(),
+      body: kIsWeb ? menuListWeb(): menuList(),
     );
   }
 
@@ -62,7 +63,9 @@ class _ManageMenuState extends State<ManageMenu> {
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: kIsWeb ? 500.w : 20.w, // Increase horizontal padding to make dialog narrower
+        ),
         child: SingleChildScrollView(
           padding: EdgeInsets.all(20.w),
           child: Column(
@@ -269,6 +272,10 @@ class _ManageMenuState extends State<ManageMenu> {
   }
 
   Widget _buildMenuItemCard(MenuItemModel menuItem) {
+
+    if (kIsWeb) {
+      return _buildWebMenuItemCard(menuItem);
+    }
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -387,21 +394,189 @@ class _ManageMenuState extends State<ManageMenu> {
     );
   }
 
+  // MENU LIST FOR WEB
+  Widget menuListWeb() {
+    return Obx(() {
+      if (menuController.isLoading.isTrue) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (menuController.menuItems.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.restaurant_menu, size: 80.w, color: txtGrey2),
+              SizedBox(height: 16.h),
+              Text(
+                "No menu items found",
+                style: interMedium(size: 16.sp, color: txtGrey2),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                "Add your first menu item using the + button",
+                style: interRegular(size: 14.sp, color: txtGrey2),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      }
+
+      return RefreshIndicator(
+        onRefresh: () => menuController.getAllMenuItems(),
+        child: GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 1.8, // Adjust this ratio (width/height)
+            crossAxisSpacing: 20.w,
+            mainAxisSpacing: 20.h,
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+          itemCount: menuController.menuItems.length,
+          itemBuilder: (context, index) {
+            final menuItem = menuController.menuItems[index];
+            return _buildMenuItemCard(menuItem);
+          },
+        ),
+      );
+    });
+  }
+
+  Widget _buildWebMenuItemCard(MenuItemModel menuItem) {
+  return Card(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12.r)
+    ),
+    child: Padding(
+      padding: EdgeInsets.all(12.w), // Reduced padding
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // More compact layout
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Smaller image
+              Container(
+                width: 50.w,
+                height: 50.w,
+                decoration: BoxDecoration(
+                  color: orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8.r),
+                  image: menuItem.imageUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(menuItem.imageUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: menuItem.imageUrl == null
+                    ? Icon(Icons.restaurant, color: orange, size: 24.w)
+                    : null,
+              ),
+              SizedBox(width: 12.w),
+              
+              // Compact details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            menuItem.name,
+                            style: interSemiBold(size: 15.sp, color: txtBlack),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'Rs. ${menuItem.price.toStringAsFixed(2)}',
+                          style: interBold(size: 15.sp, color: orange),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      menuItem.description,
+                      style: interRegular(size: 13.sp, color: txtGrey2),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 8.h),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 3.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4.r),
+                      ),
+                      child: Text(
+                        menuItem.category,
+                        style: interMedium(
+                          size: 11.sp,
+                          color: orange,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          // Compact buttons
+          SizedBox(height: 12.h),
+          Row(
+            children: [
+              Expanded(
+                child: CustomButton(
+                  text: "Edit",
+                  color: txtBlue,
+                  onTap: () => _showEditDialog(menuItem),
+                  height: 32.h,
+                  width: 40,
+                  fontSize: 12.sp,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: CustomButton(
+                  text: "Delete",
+                  color: Colors.red,
+                  onTap: () => _showDeleteDialog(menuItem),
+                  height: 32.h,
+                  width: 40.w,
+                  fontSize: 12.sp,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   //edit menu items
   void _showEditDialog(MenuItemModel menuItem) {
   final formKey = GlobalKey<FormState>();
   final nameController = TextEditingController(text: menuItem.name);
-  final descriptionController =
-      TextEditingController(text: menuItem.description);
-  final priceController =
-      TextEditingController(text: menuItem.price.toString());
+  final descriptionController = TextEditingController(text: menuItem.description);
+  final priceController = TextEditingController(text: menuItem.price.toString());
   String selectedCategory = menuItem.category;
 
   Get.dialog(
     Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-      insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: kIsWeb ? 500.w : 20.w, // Increase horizontal padding to make dialog narrower
+      ),
       child: SingleChildScrollView(
         padding: EdgeInsets.all(20.w),
         child: Column(

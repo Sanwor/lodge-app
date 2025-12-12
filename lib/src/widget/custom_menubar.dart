@@ -1,8 +1,10 @@
+import 'package:family_home/src/app_config/app_styles.dart';
 import 'package:family_home/src/view/calendar.dart';
 import 'package:family_home/src/view/login_page.dart';
 import 'package:family_home/src/view/manage_menu.dart';
 import 'package:family_home/src/view/manage_rooms.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -12,8 +14,10 @@ class CustomMenubar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isWeb = kIsWeb;
     return Drawer(
-      backgroundColor: Colors.white,
+      width: isWeb ? 400.w : 280.w,
+      backgroundColor: white,
       child: Column(
         children: [
           _buildHeader(),

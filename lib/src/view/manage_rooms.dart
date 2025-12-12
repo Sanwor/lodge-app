@@ -8,6 +8,7 @@ import 'package:family_home/src/controllers/room_controller.dart';
 import 'package:family_home/src/models/room_model.dart';
 import 'package:family_home/src/widget/custom_button.dart';
 import 'package:family_home/src/widget/custom_textformfield.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -39,7 +40,7 @@ class _ManageRoomState extends State<ManageRoom> {
         child: Icon(Icons.add, color: white, size: 24.w),
         onPressed: () => _showAddDialog(),
       ),
-      body: roomList(),
+      body: kIsWeb ? roomListWeb() : roomList(),
     );
   }
 
@@ -70,7 +71,9 @@ class _ManageRoomState extends State<ManageRoom> {
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: kIsWeb ? 500.w : 20.w, // Increase horizontal padding to make dialog narrower
+        ),
         child: SingleChildScrollView(
           padding: EdgeInsets.all(20.w),
           child: Column(
@@ -256,6 +259,58 @@ class _ManageRoomState extends State<ManageRoom> {
     });
   }
 
+  // ROOM LIST FOR WEB
+  Widget roomListWeb() {
+    return Obx(() {
+      if (roomController.isLoading.isTrue) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (roomController.rooms.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.meeting_room, size: kIsWeb ? 120.w : 80.w, color: txtGrey2),
+              SizedBox(height: 24.h),
+              Text(
+                "No rooms found",
+                style: interMedium(size: kIsWeb ? 20.sp : 16.sp, color: txtGrey2),
+              ),
+              SizedBox(height: 12.h),
+              Text(
+                "Add your first room using the + button",
+                style: interRegular(size: kIsWeb ? 16.sp : 14.sp, color: txtGrey2),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      }
+
+      return RefreshIndicator(
+        onRefresh: () => roomController.getAllRooms(),
+        child: GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3, // 2 columns on web
+            childAspectRatio: 1.8, // More rectangular cards
+            crossAxisSpacing: 20.w,
+            mainAxisSpacing: 20.h,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: kIsWeb ? 40.w : 20.w,
+            vertical: 16.h,
+          ),
+          itemCount: roomController.rooms.length,
+          itemBuilder: (context, index) {
+            final room = roomController.rooms[index];
+            return _buildWebRoomCard(room); // Use web-specific card
+          },
+        ),
+      );
+    });
+  }
+
   // ============ HELPER WIDGETS ============
   Widget _buildRoomTypeDropdown({
     required String value,
@@ -295,6 +350,12 @@ class _ManageRoomState extends State<ManageRoom> {
   }
 
   Widget _buildRoomCard(RoomModel room) {
+    final bool isWeb = kIsWeb;
+  
+    if (isWeb) {
+      return _buildWebRoomCard(room);
+    }
+
   return FutureBuilder<bool>(
     future: _checkRoomOccupancy(room.roomNumber),
     builder: (context, snapshot) {
@@ -448,6 +509,164 @@ class _ManageRoomState extends State<ManageRoom> {
   );
 }
 
+  Widget _buildWebRoomCard(RoomModel room) {
+    return FutureBuilder<bool>(
+      future: _checkRoomOccupancy(room.roomNumber),
+      builder: (context, snapshot) {
+        bool isOccupied = snapshot.data ?? false;
+        bool isLoading = snapshot.connectionState == ConnectionState.waiting;
+        
+        return Card(
+          elevation: 3,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with room number and status
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 40.w,
+                          height: 40.w,
+                          decoration: BoxDecoration(
+                            color: orange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Icon(Icons.meeting_room, color: orange, size: 20.w),
+                        ),
+                        SizedBox(width: 12.w),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Room ${room.roomNumber}",
+                              style: interBold(size: 18.sp, color: txtBlack),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              room.roomType,
+                              style: interMedium(size: 14.sp, color: txtBlue),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    if (isLoading)
+                      SizedBox(
+                        width: 16.w,
+                        height: 16.w,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 5.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isOccupied
+                              ? Colors.red.withValues(alpha: 0.1)
+                              : Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: Text(
+                          isOccupied ? 'Occupied' : 'Available',
+                          style: interMedium(
+                            size: 12.sp,
+                            color: isOccupied ? Colors.red : Colors.green,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                
+                SizedBox(height: 12.h),
+                
+                // Description
+                Text(
+                  room.description,
+                  style: interRegular(size: 14.sp, color: txtGrey2),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                
+                SizedBox(height: 16.h),
+                
+                // Stats and price
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 6.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.people, size: 14.w, color: Colors.blue),
+                          SizedBox(width: 4.w),
+                          Text(
+                            "${room.capacity} Persons",
+                            style: interMedium(size: 13.sp, color: Colors.blue),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Spacer(),
+                    Text(
+                      'Rs. ${room.pricePerDay.toStringAsFixed(0)}/day',
+                      style: interBold(size: 18.sp, color: orange),
+                    ),
+                  ],
+                ),
+                
+                SizedBox(height: 16.h),
+                Divider(color: Colors.grey.shade300),
+                SizedBox(height: 8.h),
+                
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: CustomButton(
+                        text: "Edit",
+                        color: isOccupied ? Colors.grey : txtBlue,
+                        onTap: isOccupied ? null : () => _showEditDialog(room),
+                        height: 38.h,
+                        width: 40.w,
+                        fontSize: 13.sp,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: CustomButton(
+                        text: "Delete",
+                        color: isOccupied ? Colors.grey : Colors.red,
+                        onTap: isOccupied ? null : () => _showDeleteDialog(room),
+                        height: 38.h,
+                        width: 40.w,
+                        fontSize: 13.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   // Helper method
   Future<bool> _checkRoomOccupancy(String roomNumber) async {
@@ -488,7 +707,9 @@ class _ManageRoomState extends State<ManageRoom> {
   Get.dialog(
     Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-      insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: kIsWeb ? 500.w : 20.w, // Increase horizontal padding to make dialog narrower
+      ),
       child: SingleChildScrollView(
         padding: EdgeInsets.all(20.w),
         child: Column(
