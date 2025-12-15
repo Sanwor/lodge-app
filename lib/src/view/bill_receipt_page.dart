@@ -1,3 +1,4 @@
+import 'package:family_home/src/view/home_page.dart';
 import 'package:family_home/src/widget/custom_toast.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -107,7 +108,7 @@ class _BillReceiptPageState extends State<BillReceiptPage> {
                 CustomButton(
                   text: "Back to Home",
                   color: orange,
-                  onTap: () => Get.until((route) => route.isFirst),
+                  onTap: () => Get.offAll(const HomePage()),
                   height: kIsWeb ? 64.h : 50.h,
                   width: kIsWeb ? 600.w : double.infinity,
                 ),

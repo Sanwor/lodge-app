@@ -243,14 +243,16 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       middleText: "Are you sure you want to delete ${record.name}'s record?",
       textConfirm: "Delete",
       textCancel: "Cancel",
-      confirmTextColor: Colors.white,
-      buttonColor: Colors.red,
+      confirmTextColor: white,
+      buttonColor: red,
       cancelTextColor: txtBlack,
       onConfirm: () async {
+
+        
         if (record.id == null) return;
 
         bool success = await recordController.deleteRecord(record.id!);
-        if (success) Get.back();
+        if (success) Get.offAll(const HomePage());
       },
     );
   }

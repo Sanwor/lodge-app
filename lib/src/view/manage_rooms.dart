@@ -350,164 +350,128 @@ class _ManageRoomState extends State<ManageRoom> {
   }
 
   Widget _buildRoomCard(RoomModel room) {
+
+    
     final bool isWeb = kIsWeb;
   
     if (isWeb) {
       return _buildWebRoomCard(room);
     }
 
-  return FutureBuilder<bool>(
-    future: _checkRoomOccupancy(room.roomNumber),
-    builder: (context, snapshot) {
-      bool isOccupied = snapshot.data ?? false;
-      bool isLoading = snapshot.connectionState == ConnectionState.waiting;
-      
-      return Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  // Room Icon
-                  Container(
-                    width: 60.w,
-                    height: 60.w,
-                    decoration: BoxDecoration(
-                      color: orange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                    child: Icon(Icons.meeting_room, color: orange, size: 30.w),
-                  ),
-                  SizedBox(width: 16.w),
-                  
-                  // Room Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Room ${room.roomNumber}",
-                              style: interBold(size: 16.sp, color: txtBlack),
-                            ),
-                            if (isLoading)
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8.w,
-                                  vertical: 4.h,
-                                ),
-                                child: SizedBox(
-                                  width: 12.w,
-                                  height: 12.w,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              )
-                            else
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8.w,
-                                  vertical: 4.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isOccupied
-                                      ? Colors.red.withValues(alpha: 0.1)
-                                      : Colors.green.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6.r),
-                                ),
-                                child: Text(
-                                  isOccupied ? 'Occupied' : 'Available',
-                                  style: interMedium(
-                                    size: 12.sp,
-                                    color: isOccupied ? Colors.red : Colors.green,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          room.roomType,
-                          style: interMedium(size: 14.sp, color: txtBlue),
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          room.description,
-                          style: interRegular(size: 14.sp, color: txtGrey2),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: 8.h),
-                        Row(
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.people, size: 14.w, color: txtGrey2),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  "${room.capacity} Persons",
-                                  style: interRegular(size: 12.sp, color: txtGrey2),
-                                ),
-                              ],
-                            ),
-                            Spacer(),
-                            Text(
-                              'Rs. ${room.pricePerDay.toStringAsFixed(0)}/day',
-                              style: interBold(size: 16.sp, color: orange),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              
-              // Action Buttons
-              SizedBox(height: 12.h),
-              Divider(color: Colors.grey.shade200),
-              SizedBox(height: 8.h),
-              
-              Row(
-                children: [
-                  // Edit Button
-                  Expanded(
-                    child: CustomButton(
-                      text: "Edit Room",
-                      color: isOccupied ? Colors.grey : txtBlue,
-                      onTap: isOccupied ? null : () => _showEditDialog(room),
-                      height: 40.h,
-                      width: 80.w,
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                  
-                  // Delete Button
-                  Expanded(
-                    child: CustomButton(
-                      text: "Delete",
-                      color: isOccupied ? Colors.grey : Colors.red,
-                      onTap: isOccupied ? null : () => _showDeleteDialog(room),
-                      height: 40.h,
-                      width: 80.w,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    return FutureBuilder<bool>(
+      future: _checkRoomOccupancy(room.roomNumber),
+      builder: (context, snapshot) {
+        bool isOccupied = snapshot.data ?? false;
+        
+        return Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
           ),
-        ),
-      );
-    },
-  );
-}
+          child: Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    // Room Icon
+                    Container(
+                      width: 60.w,
+                      height: 60.w,
+                      decoration: BoxDecoration(
+                        color: orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: Icon(Icons.meeting_room, color: orange, size: 30.w),
+                    ),
+                    SizedBox(width: 16.w),
+                    
+                    // Room Details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Room ${room.roomNumber}",
+                            style: interBold(size: 16.sp, color: txtBlack),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            room.roomType,
+                            style: interMedium(size: 14.sp, color: txtBlue),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            room.description,
+                            style: interRegular(size: 14.sp, color: txtGrey2),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 8.h),
+                          Row(
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.people, size: 14.w, color: txtGrey2),
+                                  SizedBox(width: 4.w),
+                                  Text(
+                                    "${room.capacity} Persons",
+                                    style: interRegular(size: 12.sp, color: txtGrey2),
+                                  ),
+                                ],
+                              ),
+                              Spacer(),
+                              Text(
+                                'Rs. ${room.pricePerDay.toStringAsFixed(0)}/day',
+                                style: interBold(size: 16.sp, color: orange),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                // Action Buttons
+                SizedBox(height: 12.h),
+                Divider(color: Colors.grey.shade200),
+                SizedBox(height: 8.h),
+                
+                Row(
+                  children: [
+                    // Edit Button
+                    Expanded(
+                      child: CustomButton(
+                        text: "Edit Room",
+                        color: isOccupied ? Colors.grey : txtBlue,
+                        onTap: isOccupied ? null : () => _showEditDialog(room),
+                        height: 40.h,
+                        width: 80.w,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    
+                    // Delete Button
+                    Expanded(
+                      child: CustomButton(
+                        text: "Delete",
+                        color: isOccupied ? Colors.grey : Colors.red,
+                        onTap: isOccupied ? null : () => _showDeleteDialog(room),
+                        height: 40.h,
+                        width: 80.w,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildWebRoomCard(RoomModel room) {
     return FutureBuilder<bool>(
