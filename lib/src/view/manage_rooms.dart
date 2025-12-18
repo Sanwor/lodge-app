@@ -351,7 +351,6 @@ class _ManageRoomState extends State<ManageRoom> {
 
   Widget _buildRoomCard(RoomModel room) {
 
-    
     final bool isWeb = kIsWeb;
   
     if (isWeb) {
@@ -494,60 +493,30 @@ class _ManageRoomState extends State<ManageRoom> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    Container(
+                      width: 40.w,
+                      height: 40.w,
+                      decoration: BoxDecoration(
+                        color: orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(Icons.meeting_room, color: orange, size: 20.w),
+                    ),
+                    SizedBox(width: 12.w),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 40.w,
-                          height: 40.w,
-                          decoration: BoxDecoration(
-                            color: orange.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Icon(Icons.meeting_room, color: orange, size: 20.w),
+                        Text(
+                          "Room ${room.roomNumber}",
+                          style: interBold(size: 18.sp, color: txtBlack),
                         ),
-                        SizedBox(width: 12.w),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Room ${room.roomNumber}",
-                              style: interBold(size: 18.sp, color: txtBlack),
-                            ),
-                            SizedBox(height: 2.h),
-                            Text(
-                              room.roomType,
-                              style: interMedium(size: 14.sp, color: txtBlue),
-                            ),
-                          ],
+                        SizedBox(height: 2.h),
+                        Text(
+                          room.roomType,
+                          style: interMedium(size: 14.sp, color: txtBlue),
                         ),
                       ],
                     ),
-                    if (isLoading)
-                      SizedBox(
-                        width: 16.w,
-                        height: 16.w,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    else
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 5.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isOccupied
-                              ? Colors.red.withValues(alpha: 0.1)
-                              : Colors.green.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: Text(
-                          isOccupied ? 'Occupied' : 'Available',
-                          style: interMedium(
-                            size: 12.sp,
-                            color: isOccupied ? Colors.red : Colors.green,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
                 

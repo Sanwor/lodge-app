@@ -170,11 +170,7 @@ class _AddRecordState extends State<AddRecord> {
       title: Text(
         "Guest Record",
         style: interBold(size: 18.sp, color: txtBlack),
-      ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_outlined, color: Colors.black),
-        onPressed: () => Navigator.pop(context),
-      ),
+      ), 
 
       actions: [
         TextButton(
